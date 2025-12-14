@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Дашборд платных медицинских услуг</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="app-header__title">
+          <h1>Финансовый дашборд платных медицинских услуг</h1>
+          <p class="app-header__subtitle">
+            Аналитика выручки, себестоимости, прибыли и фонда мотивации
+          </p>
+        </div>
+        <div class="app-header__meta">
+          <span class="badge badge--primary">v0.1 · Скелет интерфейса</span>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <div class="layout">
+          <!-- Левая колонка: фильтры и периоды -->
+          <aside class="sidebar" aria-label="Панель параметров">
+            <form id="filters-form" class="filters">
+              <!-- Блок: Период A -->
+              <section class="card filters__section" aria-labelledby="period-a-title">
+                <header class="card__header">
+                  <div>
+                    <h2 id="period-a-title" class="card__title">Период A (основной)</h2>
+                    <p class="card__subtitle">
+                      Базовый период для расчёта всех показателей
+                    </p>
+                  </div>
+                </header>
+
+                <div class="card__body">
+                  <div class="form-group">
+                    <label for="period-a-mode">Тип периода</label>
+                    <select id="period-a-mode" name="periodA.mode">
+                      <option value="month">Один месяц</option>
+                      <option value="ytd">С начала года по месяц</option>
+                      <option value="range">Диапазон месяцев</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="period-a-year">Год</label>
+                    <select id="period-a-year" name="periodA.year">
+                      <!-- Значения подставим в JS -->
+                    </select>
+                  </div>
+
+                  <div class="form-group period-group" data-period-a-field="monthFrom">
+                    <label for="period-a-month-from">Месяц</label>
+                    <select id="period-a-month-from" name="periodA.monthFrom">
+                      <option value="1">Январь</option>
+                      <option value="2">Февраль</option>
+                      <option value="3">Март</option>
+                      <option value="4">Апрель</option>
+                      <option value="5">Май</option>
+                      <option value="6">Июнь</option>
+                      <option value="7">Июль</option>
+                      <option value="8">Август</option>
+                      <option value="9">Сентябрь</option>
+                      <option value="10">Октябрь</option>
+                      <option value="11">Ноябрь</option>
+                      <option value="12">Декабрь</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group period-group period-group--range" data-period-a-field="monthTo">
+                    <label for="period-a-month-to">Месяц по</label>
+                    <select id="period-a-month-to" name="periodA.monthTo">
+                      <option value="1">Январь</option>
+                      <option value="2">Февраль</option>
+                      <option value="3">Март</option>
+                      <option value="4">Апрель</option>
+                      <option value="5">Май</option>
+                      <option value="6">Июнь</option>
+                      <option value="7">Июль</option>
+                      <option value="8">Август</option>
+                      <option value="9">Сентябрь</option>
+                      <option value="10">Октябрь</option>
+                      <option value="11">Ноябрь</option>
+                      <option value="12">Декабрь</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Блок: Сравнение с периодом B -->
+              <section class="card filters__section" aria-labelledby="period-b-title">
+                <header class="card__header">
+                  <div>
+                    <h2 id="period-b-title" class="card__title">Период B (для сравнения)</h2>
+                    <p class="card__subtitle">
+                      Опциональный период для сравнения с периодом A
+                    </p>
+                  </div>
+                  <label class="switch">
+                    <input id="compare-toggle" type="checkbox" />
+                    <span class="switch__track"></span>
+                    <span class="switch__label">Сравнивать</span>
+                  </label>
+                </header>
+
+                <div class="card__body" id="period-b-body" aria-hidden="true">
+                  <div class="form-group">
+                    <label for="period-b-mode">Режим сравнения</label>
+                    <select id="period-b-mode" name="periodB.mode">
+                      <option value="prevMonth">Предыдущий месяц</option>
+                      <option value="prevYear">Тот же месяц прошлого года</option>
+                      <option value="custom">Настроить вручную</option>
+                    </select>
+                  </div>
+
+                  <div class="period-b-custom hidden" id="period-b-custom">
+                    <div class="form-group">
+                      <label for="period-b-year">Год (B)</label>
+                      <select id="period-b-year" name="periodB.year">
+                        <!-- Значения подставим в JS -->
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="period-b-month-from">Месяц (B)</label>
+                      <select id="period-b-month-from" name="periodB.monthFrom">
+                        <option value="1">Январь</option>
+                        <option value="2">Февраль</option>
+                        <option value="3">Март</option>
+                        <option value="4">Апрель</option>
+                        <option value="5">Май</option>
+                        <option value="6">Июнь</option>
+                        <option value="7">Июль</option>
+                        <option value="8">Август</option>
+                        <option value="9">Сентябрь</option>
+                        <option value="10">Октябрь</option>
+                        <option value="11">Ноябрь</option>
+                        <option value="12">Декабрь</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="period-b-month-to">Месяц по (B)</label>
+                      <select id="period-b-month-to" name="periodB.monthTo">
+                        <option value="1">Январь</option>
+                        <option value="2">Февраль</option>
+                        <option value="3">Март</option>
+                        <option value="4">Апрель</option>
+                        <option value="5">Май</option>
+                        <option value="6">Июнь</option>
+                        <option value="7">Июль</option>
+                        <option value="8">Август</option>
+                        <option value="9">Сентябрь</option>
+                        <option value="10">Октябрь</option>
+                        <option value="11">Ноябрь</option>
+                        <option value="12">Декабрь</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Блок: Базовые фильтры -->
+              <section class="card filters__section" aria-labelledby="filters-basic-title">
+                <header class="card__header">
+                  <div>
+                    <h2 id="filters-basic-title" class="card__title">Фильтры</h2>
+                    <p class="card__subtitle">
+                      Срезы для анализа (отделение, врач, программа и др.)
+                    </p>
+                  </div>
+                </header>
+
+                <div class="card__body">
+                  <div class="form-group">
+                    <label for="filter-department">Отделение</label>
+                    <select id="filter-department" name="filters.department">
+                      <option value="all">Все отделения</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="filter-doctor">Врач</label>
+                    <select id="filter-doctor" name="filters.doctor">
+                      <option value="all">Все врачи</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="filter-contract-type">Вид договора</label>
+                    <select id="filter-contract-type" name="filters.contractType">
+                      <option value="all">Все виды</option>
+                      <option value="ambulatory">Амбулаторный</option>
+                      <option value="inpatient">Стационарный</option>
+                      <option value="daycare">Дневной стационар</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="filter-program">Канал продаж (Программа)</label>
+                    <select id="filter-program" name="filters.program">
+                      <option value="all">Все каналы</option>
+                      <option value="dms">ДМС (Страховые)</option>
+                      <option value="phys">Физ.лица (Прямые)</option>
+                      <option value="corp">Юр.лица / Прочее</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="filter-service-flag">Тип услуги</label>
+                    <select id="filter-service-flag" name="filters.serviceFlag">
+                      <option value="all">Все</option>
+                      <option value="consultation">Только приёмы</option>
+                      <option value="complex">Только сложные услуги</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="filter-payment-method">Способ оплаты</label>
+                    <select id="filter-payment-method" name="filters.paymentMethod">
+                      <option value="all">Все способы</option>
+                      <option value="card">Карта</option>
+                      <option value="advance">Аванс (лицевой счёт)</option>
+                      <option value="wire">Безнал по реквизитам</option>
+                    </select>
+                  </div>
+
+                  <div class="filters__footer">
+                    <button type="button" id="filters-reset" class="btn btn--ghost">
+                      Сбросить фильтры
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </form>
+          </aside>
+
+          <!-- Правая колонка: KPI, графики, таблицы -->
+          <section class="content" aria-label="Панель визуализации">
+            <nav class="tabs" aria-label="Основные разделы дашборда">
+              <!-- 1. Макро-уровень -->
+              <button class="tabs__button tabs__button--active" data-tab="overview" type="button">
+                Обзор
+              </button>
+              <button class="tabs__button" data-tab="clinic" type="button">
+                Клиника
+              </button>
+
+              <!-- 2. Структура и Персонал -->
+              <button class="tabs__button" data-tab="departments" type="button">
+                Отделения
+              </button>
+              <button class="tabs__button" data-tab="doctors" type="button">
+                Врачи
+              </button>
+
+              <!-- 3. Продукт и Клиент -->
+              <button class="tabs__button" data-tab="services" type="button">
+                Услуги
+              </button>
+              <button class="tabs__button" data-tab="patients" type="button">
+                Пациенты
+              </button>
+              <button class="tabs__button" data-tab="programs" type="button">
+                Программы
+              </button>
+
+              <!-- 4. Финансы и HR (ФОТ) -->
+              <button class="tabs__button" data-tab="fot" type="button">
+                Управление ФОТ
+              </button>
+              <button class="tabs__button" data-tab="motivation-doctors" type="button">
+                Эффективность оплаты
+              </button>
+              
+              <!-- 5. Глубокая аналитика (Прочие) -->
+              <button class="tabs__button" data-tab="costs" type="button">
+                Себестоимость
+              </button>
+              <button class="tabs__button" data-tab="payments" type="button">
+                Оплаты
+              </button>
+            </nav>
+
+            <div id="dashboards">
+              <!-- Дашборд: Обзор -->
+              <section class="dashboard dashboard--active" data-dashboard="overview" aria-label="Обзор">
+                <div class="kpi-grid">
+  <!-- 1. Выручка -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 class="kpi-card__title">Выручка</h3>
+        <span class="help-icon" data-tooltip="Фактически поступившие средства от пациентов и страховых компаний за выбранный период.">?</span>
+      </div>
+      <p class="kpi-card__subtitle">Касса (Оплачено)</p>
+    </header>
+    <div class="kpi-card__body">
+      <div id="kpi-revenue" class="kpi-card__value">0 ₽</div>
+      <div id="kpi-revenue-delta" class="kpi-card__delta muted">Нет данных</div>
+    </div>
+  </article>
+
+  <!-- 2. Маржинальная прибыль -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 class="kpi-card__title">Маржинальная прибыль</h3>
+        <span class="help-icon" data-tooltip="Выручка минус прямые расходы (материалы, лаборатория) и постоянные расходы клиники.">?</span>
+      </div>
+      <p class="kpi-card__subtitle">До вычета ФОТ</p>
+    </header>
+    <div class="kpi-card__body">
+      <div id="kpi-profit" class="kpi-card__value">0 ₽</div>
+      <div id="kpi-profit-delta" class="kpi-card__delta muted">Нет данных</div>
+    </div>
+  </article>
+
+  <!-- 3. НОВЫЙ KPI: Чистая прибыль -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 class="kpi-card__title">Чистая прибыль</h3>
+        <span class="help-icon" data-tooltip="Итоговый финансовый результат: Маржинальная прибыль минус ФОТ врачей и налоги. Деньги бизнеса.">?</span>
+      </div>
+      <p class="kpi-card__subtitle">Bottom Line (Итого)</p>
+    </header>
+    <div class="kpi-card__body">
+      <!-- Новый ID для JS -->
+      <div id="kpi-net-profit" class="kpi-card__value" style="color: #0abab5;">0 ₽</div>
+    </div>
+  </article>
+
+  <!-- 4. Рентабельность -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 class="kpi-card__title">Рентабельность (ROS)</h3>
+        <span class="help-icon" data-tooltip="Эффективность продаж: сколько % маржинальной прибыли содержится в выручке.">?</span>
+      </div>
+      <p class="kpi-card__subtitle">Качество выручки</p>
+    </header>
+    <div class="kpi-card__body">
+      <div id="kpi-margin" class="kpi-card__value">0%</div>
+      <div id="kpi-margin-delta" class="kpi-card__delta muted">Нет данных</div>
+    </div>
+  </article>
+
+  <!-- 5. Оказано услуг -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 class="kpi-card__title">Оказано услуг</h3>
+        <span class="help-icon" data-tooltip="Общее количество выполненных позиций прайс-листа (сумма quantity).">?</span>
+      </div>
+      <p class="kpi-card__subtitle">Объем производства</p>
+    </header>
+    <div class="kpi-card__body">
+      <div id="kpi-services-count" class="kpi-card__value">0</div>
+    </div>
+  </article>
+
+  <!-- 6. Пациентов -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 class="kpi-card__title">Пациентов</h3>
+        <span class="help-icon" data-tooltip="Количество уникальных людей, получивших услуги в выбранном периоде.">?</span>
+      </div>
+      <p class="kpi-card__subtitle">Охват аудитории</p>
+    </header>
+    <div class="kpi-card__body">
+      <div id="kpi-patients-count" class="kpi-card__value">0</div>
+    </div>
+  </article>
+
+  <!-- 7. Средний чек -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 id="title-avg-check-patient" class="kpi-card__title">Средний чек</h3>
+        <span class="help-icon" data-tooltip="Выручка / Количество уникальных пациентов.">?</span>
+      </div>
+      <p class="kpi-card__subtitle">LTV за период</p>
+    </header>
+    <div class="kpi-card__body">
+      <div id="kpi-average-check-patient" class="kpi-card__value">0 ₽</div>
+    </div>
+  </article>
+
+  <!-- 8. Ср. стоимость услуги -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 class="kpi-card__title">Ср. стоимость услуги</h3>
+        <span class="help-icon" data-tooltip="Выручка / Количество услуг.">?</span>
+      </div>
+      <p class="kpi-card__subtitle">Ценовой уровень</p>
+    </header>
+    <div class="kpi-card__body">
+      <div id="kpi-average-check-service" class="kpi-card__value">0 ₽</div>
+    </div>
+  </article>
+
+  <!-- 9. Услуг на пациента -->
+  <article class="card kpi-card">
+    <header class="kpi-card__header">
+      <div class="kpi-card__title-row">
+        <h3 id="title-services-per-patient" class="kpi-card__title">Услуг на пациента</h3>
+        <span class="help-icon" data-tooltip="Оказано услуг / Пациентов. Глубина потребления.">?</span>
+      </div>
+      <p class="kpi-card__subtitle">Комплексность</p>
+    </header>
+    <div class="kpi-card__body">
+      <div id="kpi-services-per-patient" class="kpi-card__value">0</div>
+    </div>
+  </article>
+</div>
+
+                <div class="content-grid">
+  <!-- ЛЕВАЯ КОЛОНКА: Графики -->
+  <div class="grid-column-left">
+    
+    <!-- 1. График динамики -->
+    <article class="card card--chart" id="overview-dynamics-card">
+      <header class="card__header">
+        <div>
+          <h2 class="card__title">Динамика результатов</h2>
+          <p class="card__subtitle">Сравнение Выручки и Маржинальной прибыли по месяцам</p>
+        </div>
+        <div class="help-icon" data-tooltip="Синие столбцы — Выручка (Приход денег). Бирюзовые — Маржинальная прибыль (сколько осталось после оплаты материалов и внешних услуг, но ДО зарплат врачей).">?</div>
+      </header>
+      <div class="card__body">
+        <div class="chart-wrapper">
+          <canvas id="overview-revenue-profit-chart"></canvas>
+        </div>
+      </div>
+    </article>
+
+    <!-- 2. Пилюли структуры -->
+    <article class="card" id="overview-structure-card">
+      <header class="card__header">
+        <div>
+          <!-- Убрали подзаголовок, оставили только Заголовок -->
+          <h3 class="card__title">Структура выручки</h3>
+        </div>
+      </header>
+      <div class="card__body">
+        <!-- По договорам -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 4px;">
+          <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; font-family: 'Inter', sans-serif;">Где лечим (Условия)</div>
+          <div class="help-icon" style="font-size:10px" data-tooltip="Амбулатория vs Стационар. Влияет на структуру затрат.">?</div>
+        </div>
+        <div class="chart-wrapper" style="height: 50px; margin-bottom: 16px;">
+          <canvas id="overview-contract-pill"></canvas>
+        </div>
+
+        <!-- По каналам -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 4px;">
+          <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; font-family: 'Inter', sans-serif;">Кто платит (Канал)</div>
+          <div class="help-icon" style="font-size:10px" data-tooltip="Физлица (Прямые) vs ДМС. Определяется по полю 'Тип прикрепления'.">?</div>
+        </div>
+        <div class="chart-wrapper" style="height: 50px;">
+          <canvas id="overview-program-pill"></canvas>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- ПРАВАЯ КОЛОНКА: Топ-10 отделений -->
+  <article class="card card--table">
+    <header class="card__header">
+      <div>
+        <h2 class="card__title">Топ-10 Отделений</h2>
+        <p class="card__subtitle">Лидеры по маржинальной прибыли</p>
+      </div>
+    </header>
+    <div class="card__body">
+      <div class="placeholder-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Отделение</th>
+              <th class="align-right">
+                Выручка
+                <span class="help-icon" data-tooltip="Общая сумма оплат (amountPaid)">?</span>
+              </th>
+              <th class="align-right" style="color: #0abab5;">
+                Марж. прибыль
+                <span class="help-icon" data-tooltip="Выручка минус Операционные расходы. База для выплаты бонусов.">?</span>
+              </th>
+              <th class="align-right">
+                Рент.
+                <span class="help-icon" data-tooltip="Рентабельность (Марж. прибыль / Выручка).">?</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="overview-departments-body">
+            <tr><td class="muted" colspan="4">Данные загружаются...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </article>
+</div>
+                <!-- Большая вертикальная диаграмма потока денег -->
+                <article class="card card--flow">
+                  <header class="card__header">
+                    <div>
+                      <div class="kpi-card__title-row">
+                        <h2 class="card__title">Поток денег клиники</h2>
+                        <span class="help-icon" data-tooltip="Диаграмма показывает, как вся выручка клиники разбивается на основные блоки затрат и чистую прибыль. Толщина потока = сколько денег проходит через этот блок за выбранный период.">
+                          ?
+                        </span>
+                      </div>
+                      <p class="card__subtitle">
+                        Выручка как поток сверху вниз: операционные затраты, фонд, мотивация и чистая прибыль
+                        по текущему периоду и фильтрам.
+                      </p>
+                    </div>
+                  </header>
+                  <div class="card__body">
+                    <div class="flow-chart-container" id="overview-flow-chart"></div>
+                  </div>
+                </article>
+              </section>
+
+              <!-- Дашборд "Отделения" -->
+<section class="dashboard" data-dashboard="departments" aria-label="Отделения">
+  <!-- БЛОК 1: KPI-карточки (Отделения) -->
+  <div class="kpi-grid">
+    <!-- Выручка -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Выручка отделений</h3>
+          <span class="help-icon" data-tooltip="Суммарная выручка по всем отделениям за выбранный период.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Валовый доход</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="departments-kpi-revenue" class="kpi-card__value">0 ₽</div>
+      </div>
+    </article>
+
+    <!-- Чистая прибыль -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Чистая прибыль</h3>
+          <span class="help-icon" data-tooltip="Итоговый фин. результат по отделениям: Выручка - OpEx - ФОТ Сделка.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">По всем отделениям</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="departments-kpi-profit-method" class="kpi-card__value">0 ₽</div>
+      </div>
+    </article>
+
+    <!-- Рентабельность -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Рентабельность (ROS)</h3>
+          <span class="help-icon" data-tooltip="Эффективность продаж: (Чистая прибыль / Выручка) × 100%.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Средняя по больнице</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="departments-kpi-margin-method" class="kpi-card__value">0%</div>
+      </div>
+    </article>
+  </div>
+
+  <!-- БЛОК 2: Flow-bar профиля портфеля (КОМПАКТНЫЙ) -->
+  <article class="card card--chart" id="departments-portfolio-flow-card" style="margin-top: 20px;">
+    <header class="card__header">
+      <h2 class="card__title">Профиль портфеля отделений</h2>
+      <p class="card__subtitle">Вклад каждого сегмента в общую выручку</p>
+    </header>
+    <div class="card__body">
+      <!-- Уменьшили высоту до 60px -->
+      <div class="chart-wrapper" style="height: 60px;">
+        <canvas id="departments-portfolio-flow"></canvas>
+      </div>
+    </div>
+  </article>
+
+  <!-- БЛОК 2.5: Sankey-диаграмма: Источники выручки -> Отделения -->
+  <article class="card card--flow" id="departments-sankey-card" style="margin-top: 20px;">
+    <header class="card__header">
+      <div>
+        <h2 class="card__title">Потоки выручки</h2>
+        <p class="card__subtitle">
+          Распределение денег от источников финансирования (виды договоров) к отделениям.
+        </p>
+      </div>
+    </header>
+    <div class="card__body">
+      <!-- Высота 500px для наглядности -->
+      <div class="flow-chart-container" id="departments-sankey-chart" style="height: 600px;"></div>
+    </div>
+  </article>
+
+  <!-- БЛОК 3: Графики (Карта и Структура) в 2 колонки -->
+  <div class="dashboard-split" style="margin-top: 20px;">
+    <!-- Левая колонка: Карта (Scatter) -->
+    <div class="dashboard-split__left">
+      <article class="card card--chart">
+        <header class="card__header">
+            <div class="kpi-card__title-row" style="width: 100%; justify-content: space-between;">
+              <div>
+                <h2 class="card__title">Карта эффективности</h2>
+                <p class="card__subtitle">Матрица: Доля (X) vs Рентабельность (Y)</p>
+              </div>
+              <!-- Кнопка "На весь экран" -->
+              <button type="button" class="btn btn--ghost btn--sm" id="btn-expand-scatter" title="Развернуть график">
+                ⤢
+              </button>
+            </div>
+          </header>
+        <div class="card__body">
+          <div class="chart-wrapper" style="height: 320px;">
+            <canvas id="departments-portfolio-scatter"></canvas>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Правая колонка: Структура P&L (Donut) -->
+    <div class="dashboard-split__right">
+      <article class="card card--chart">
+        <header class="card__header">
+          <h2 class="card__title">Структура P&L отделения</h2>
+          <label class="sr-only" for="department-pl-chart-select">Выбор отделения для структуры P&amp;L</label>
+          <select id="department-pl-chart-select" class="input"></select>
+        </header>
+        <div class="card__body">
+          <div class="chart-wrapper">
+            <canvas id="department-pl-chart"></canvas>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <!-- БЛОК 4: Широкая таблица P&L -->
+  <div class="card card--table card--collapsible" id="departments-pl-card" style="margin-top: 20px;">
+    <header class="card__header">
+      <h2 class="card__title">P&L по отделениям</h2>
+      <button type="button" class="btn btn--ghost btn--sm card__collapse-btn" data-collapse-target="departments-pl-card" aria-expanded="true">
+        Свернуть
+      </button>
+    </header>
+    <div class="card__body">
+      <div class="placeholder-table">
+        <!-- JS вставит сюда таблицу -->
+        <div id="departments-pl-container"></div> 
+      </div>
+    </div>
+  </div>
+</section>
+
+              <section class="dashboard" data-dashboard="doctors" aria-label="Врачи">
+  <!-- 1. БЛОК KPI: Здоровье штата -->
+  <div class="kpi-grid">
+    <!-- Активный штат -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Активный штат</h3>
+          <span class="help-icon" data-tooltip="Врачи, имеющие выручку > 0 в этом периоде.">?</span>
+        </div>
+      </header>
+      <div class="kpi-card__body">
+        <div id="docs-kpi-active" class="kpi-card__value">0</div>
+      </div>
+    </article>
+
+    <!-- Выручка врачей -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Выручка врачей</h3>
+          <span class="help-icon" data-tooltip="Суммарная выручка по всем врачам (Amount Paid).">?</span>
+        </div>
+      </header>
+      <div class="kpi-card__body">
+        <div id="docs-kpi-revenue" class="kpi-card__value">0 ₽</div>
+      </div>
+    </article>
+
+    <!-- Средняя выработка -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Средняя выработка</h3>
+          <span class="help-icon" data-tooltip="Выручка / Активный штат.">?</span>
+        </div>
+      </header>
+      <div class="kpi-card__body">
+        <div id="docs-kpi-avg-revenue" class="kpi-card__value">0 ₽</div>
+      </div>
+    </article>
+
+    <!-- ФОТ-емкость -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">ФОТ-емкость</h3>
+          <span class="help-icon" data-tooltip="ФОТ Сделка / Выручка. Доля выручки, которая уходит на оплату труда врачей (факт).">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Средняя нагрузка</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="docs-kpi-wage-load" class="kpi-card__value">0 %</div>
+      </div>
+    </article>
+  </div>
+
+  <!-- 1.5 БЛОК: Структура штата (Flow Bar) -->
+  <article class="card" id="doctors-structure-card" style="margin-top: 20px;">
+    <header class="card__header">
+      <h3 class="card__title">Структура эффективности штата</h3>
+      <p class="card__subtitle">Распределение врачей по категориям (кол-во и доля)</p>
+    </header>
+    <div class="card__body">
+      <div class="chart-wrapper" style="height: 60px;">
+        <canvas id="doctors-structure-chart"></canvas>
+      </div>
+    </div>
+  </article>
+
+  <!-- 2. БЛОК ГРАФИКОВ -->
+  <div class="content-grid" style="margin-top: 20px;">
+    <!-- Матрица эффективности -->
+    <article class="card card--chart" style="min-height: auto;">
+      <header class="card__header">
+        <div>
+          <h2 class="card__title">Матрица эффективности</h2>
+          <p class="card__subtitle">Выручка vs Маржинальность</p>
+        </div>
+        <!-- Кнопка расширения -->
+        <button type="button" class="btn btn--ghost btn--sm" id="btn-expand-doctors-scatter" title="Развернуть на весь экран">
+          ⤢
+        </button>
+      </header>
+      <div class="card__body">
+        <div class="chart-wrapper" style="height: 420px;">
+          <canvas id="doctors-scatter-chart"></canvas>
+        </div>
+      </div>
+    </article>
+
+    <!-- Топ рейтинг -->
+    <article class="card card--chart" style="min-height: auto;">
+      <header class="card__header">
+        <h2 class="card__title">Топ-15 по чистой прибыли</h2>
+        <p class="card__subtitle">Врачи, генерирующие основной Cash Flow</p>
+      </header>
+      <div class="card__body">
+        <div class="chart-wrapper" style="height: 300px;">
+          <canvas id="doctors-top-chart"></canvas>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- 3. БЛОК ТАБЛИЦЫ (FIXED HEADER STRUCTURE) -->
+  <div class="card card--table" style="margin-top: 20px;">
+    <header class="card__header">
+      <div>
+        <h2 class="card__title">Детальный реестр врачей</h2>
+        <p class="card__subtitle">Сводные данные по выручке, ФОТ и марже</p>
+      </div>
+
+      <!-- Группируем контролы, чтобы они были справа вместе -->
+      <div style="display: flex; gap: 10px; align-items: flex-end;">
+        <div class="services-controls">
+          <label class="sr-only" for="doctor-category-filter">Фильтр категории врачей</label>
+          <select id="doctor-category-filter" class="input">
+            <option value="all">Все категории</option>
+            <option value="stars">💎 Звезды (Эффективные)</option>
+            <option value="workhorse">🚜 Тягачи (Объемные)</option>
+            <option value="virtuoso">🎯 Виртуозы (Маржинальные)</option>
+            <option value="outsider">🔻 Аутсайдеры (Риск)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0; min-width: 250px;">
+          <label class="sr-only" for="doctor-search">Поиск врача</label>
+          <input
+            id="doctor-search"
+            type="text"
+            class="input"
+            placeholder="Поиск врача..."
+          />
+        </div>
+      </div>
+    </header>
+
+    <div class="card__body">
+      <div class="placeholder-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Врач</th>
+              <th class="align-right">Выручка</th>
+              <th class="align-right">ФОТ + Налоги</th>
+              <th class="align-right">ФОТ-емкость</th>
+              <th class="align-right">Операц. затраты</th>
+              <th class="align-right">Прибыль</th>
+              <th class="align-right">Маржа</th>
+            </tr>
+          </thead>
+          <tbody id="doctors-pl-body">
+            <tr>
+              <td class="muted" colspan="7">Загрузка данных...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Пагинация -->
+      <div class="table-footer" id="doctors-pagination">
+        <div class="table-footer__info" id="doctors-pagination-info"></div>
+        <div class="table-footer__controls">
+          <button type="button" class="btn btn--ghost btn--sm" id="doctors-page-prev">←</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="doctors-page-next">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+              <section class="dashboard" data-dashboard="clinic" aria-label="Клиника">
+  
+  <!-- 1. KPI: Верхнеуровневые показатели -->
+  <div class="kpi-grid">
+    <!-- Выручка -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Выручка</h3>
+          <span class="help-icon" data-tooltip="Общая сумма оплат (amountPaid). Входящий поток денег.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Касса (Оплачено)</p>
+      </header>
+      <div class="kpi-card__body"><div id="clinic-kpi-revenue" class="kpi-card__value">0 ₽</div></div>
+    </article>
+
+    <!-- Операционные расходы (OpEx) -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Операц. расходы (OpEx)</h3>
+          <span class="help-icon" data-tooltip="Прямые затраты на услугу: Материалы + Лаборатория + Комиссии банка. БЕЗ окладов врачей.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Материалы, Комиссии, Внешние</p>
+      </header>
+      <div class="kpi-card__body"><div id="clinic-kpi-opex" class="kpi-card__value">0 ₽</div></div>
+    </article>
+
+    <!-- ФОТ Сделка -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">ФОТ (Сделка)</h3>
+          <span class="help-icon" data-tooltip="Переменная часть зарплаты (% от выручки/маржи). Полная стоимость для клиники (На руки + Налоги).">?</span>
+        </div>
+        <p class="kpi-card__subtitle">На руки + Налоги</p>
+      </header>
+      <div class="kpi-card__body"><div id="clinic-kpi-payroll" class="kpi-card__value" style="color: #f97316;">0 ₽</div></div>
+    </article>
+
+    <!-- Чистая прибыль -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Чистая прибыль</h3>
+          <span class="help-icon" data-tooltip="Итоговый результат: Выручка - OpEx - Сдельный ФОТ.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Bottom Line</p>
+      </header>
+      <div class="kpi-card__body"><div id="clinic-kpi-profit" class="kpi-card__value" style="color:#0abab5">0 ₽</div></div>
+    </article>
+  </div>
+
+  <!-- 2. MACRO FLOW: Реальные объемы -->
+  <article class="card card--flow" style="margin-top: 24px;">
+    <header class="card__header">
+      <div>
+        <h2 class="card__title">Фактический поток денег</h2>
+        <p class="card__subtitle">Распределение всей выручки за период</p>
+      </div>
+    </header>
+    <div class="card__body">
+      <div id="clinic-mega-sankey" style="height: 450px; width: 100%;"></div>
+    </div>
+  </article>
+
+  <!-- 3. DETAILS: Таблица и Структура (Симметричная сетка) -->
+  <div class="dashboard-split" style="margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Лево: P&L -->
+    <article class="card card--table" style="height: 100%;">
+      <header class="card__header">
+        <h2 class="card__title">Управленческий P&L</h2>
+      </header>
+      <div class="card__body">
+        <div class="placeholder-table">
+          <table class="clinic-pl-table">
+            <thead>
+              <tr>
+                <th>Статья</th>
+                <th class="align-right">Факт</th>
+                <th class="align-right" style="width: 25%;">Доля</th>
+                <th class="align-right">Динамика</th>
+                <th class="align-right">Статус</th>
+              </tr>
+            </thead>
+            <tbody id="clinic-pl-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <!-- Право: Donut -->
+    <article class="card card--chart" style="height: 100%; display: flex; flex-direction: column;">
+      <header class="card__header">
+        <h2 class="card__title">Структура расходов</h2>
+      </header>
+      <div class="card__body" style="flex: 1; display: flex; align-items: center; justify-content: center;">
+        <div class="chart-wrapper" style="height: 320px; width: 100%;">
+          <canvas id="clinic-structure-donut"></canvas>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- 4. MICRO FLOW: Unit Economics 100k -->
+  <article class="card card--flow" style="margin-top: 24px; border: 1px solid #e2e8f0; background: #f8fafc;">
+    <header class="card__header">
+      <div>
+        <h2 class="card__title" style="color: #0f172a;">Экономика 100 000 рублей</h2>
+        <p class="card__subtitle">Сквозной сценарий распределения на понятном масштабе</p>
+      </div>
+      <div class="badge badge--primary" style="background: #0f172a; color: white;">MODEL: 100K</div>
+    </header>
+    <div class="card__body">
+      <div id="clinic-unit-sankey" style="height: 350px; width: 100%;"></div>
+    </div>
+  </article>
+
+</section>
+
+              <!-- ================================================= -->
+<!-- ДАШБОРД: УСЛУГИ (ПОЛНЫЙ ИСПРАВЛЕННЫЙ КОД)         -->
+<!-- ================================================= -->
+<section class="dashboard" data-dashboard="services" aria-label="Услуги">
+  
+  <!-- 1. KPI БЛОК -->
+  <div class="kpi-grid">
+    <!-- Выручка по услугам -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Выручка услуг</h3>
+          <span class="help-icon" data-tooltip="Суммарная выручка по всем оказанным услугам за период.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Общий объем продаж</p>
+      </header>
+      <div class="kpi-card__body">
+        <!-- ID должен совпадать с main.js renderServicesDashboard -->
+        <div id="svc-kpi-revenue" class="kpi-card__value">0 ₽</div>
+      </div>
+    </article>
+
+    <!-- Количество оказаний -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Количество</h3>
+          <span class="help-icon" data-tooltip="Сколько раз услуги были оказаны (сумма quantity).">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Объем производства</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="svc-kpi-count" class="kpi-card__value">0</div>
+      </div>
+    </article>
+
+    <!-- Средняя маржинальность -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Средняя маржа</h3>
+          <span class="help-icon" data-tooltip="Средневзвешенная маржинальность по всем услугам (Прибыль / Выручка).">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Рентабельность портфеля</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="svc-kpi-margin" class="kpi-card__value">0 %</div>
+      </div>
+    </article>
+
+    <!-- Проблемные позиции -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Убыточные позиции</h3>
+          <span class="help-icon" data-tooltip="Количество уникальных наименований услуг, имеющих отрицательную прибыль.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Требуют пересмотра цен</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="svc-kpi-loss-count" class="kpi-card__value" style="color: var(--color-danger);">0</div>
+      </div>
+    </article>
+  </div>
+
+  <!-- 2. ГРАФИКИ -->
+  
+  <!-- Flow Bar: Структура типов -->
+  <!-- Важно: id="services-structure-card" и id="services-structure-chart" -->
+  <article class="card" id="services-structure-card" style="margin-top: 20px;">
+    <header class="card__header">
+      <h3 class="card__title">Структура портфеля</h3>
+      <p class="card__subtitle">Распределение по типам (Консультации, Процедуры, Диагностика)</p>
+    </header>
+    <div class="card__body">
+      <div class="chart-wrapper" style="height: 60px;">
+        <canvas id="services-structure-chart"></canvas>
+      </div>
+    </div>
+  </article>
+
+  <div class="content-grid" style="margin-top: 20px;">
+    <!-- Матрица (Scatter) -->
+    <article class="card card--chart" style="min-height: auto;">
+      <header class="card__header">
+        <h2 class="card__title">Матрица услуг (BCG)</h2>
+        <p class="card__subtitle">Популярность (X) vs Прибыльность (Y)</p>
+      </header>
+      <div class="card__body">
+        <!-- Увеличенная высота для наглядности -->
+        <div class="chart-wrapper" style="height: 450px;">
+          <canvas id="services-scatter-chart"></canvas>
+        </div>
+      </div>
+    </article>
+
+    <!-- Топ-15 -->
+    <article class="card card--chart" style="min-height: auto;">
+      <header class="card__header">
+        <h2 class="card__title">Топ-15 по прибыли</h2>
+        <p class="card__subtitle">Локомотивы портфеля</p>
+      </header>
+      <div class="card__body">
+        <div class="chart-wrapper" style="height: 420px;">
+          <canvas id="services-top-chart"></canvas>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- 3. БЛОК ТАБЛИЦЫ: Детальный реестр услуг -->
+  <article class="card card--table" style="margin-top: 20px;">
+    <header class="card__header">
+      <div>
+        <h2 class="card__title">Реестр услуг</h2>
+        <p class="card__subtitle">Детальная экономика по каждой позиции</p>
+      </div>
+
+      <!-- Контролы таблицы (ID должны совпадать с main.js initializeServicesControls) -->
+      <div class="services-controls">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="sr-only" for="services-category-filter">Фильтр услуг</label>
+          <select id="services-category-filter" class="input">
+            <option value="all">Все услуги</option>
+            <option value="loss">Убыточные (Loss)</option>
+            <option value="high_margin">Высокомаржинальные (>30%)</option>
+            <option value="popular">Самые популярные</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0; min-width: 250px;">
+          <label class="sr-only" for="services-search-input">Поиск услуги или кода</label>
+          <input
+            id="services-search-input"
+            type="text"
+            class="input"
+            placeholder="Поиск услуги или кода..."
+          />
+        </div>
+      </div>
+    </header>
+
+    <div class="card__body">
+      <!-- Сама таблица -->
+      <div class="placeholder-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Услуга / Код</th>
+              <th class="align-right">Кол-во</th>
+              <th class="align-right">Ср. цена</th>
+              <th class="align-right">Выручка</th>
+              <th class="align-right muted">Полная с/с</th>
+              <th class="align-right">Прибыль</th>
+              <th class="align-right">Рент.</th>
+            </tr>
+          </thead>
+          <!-- ВАЖНО: ID tbody должен быть services-table-body, как в JS -->
+          <tbody id="services-table-body">
+            <tr>
+              <td class="muted" colspan="7">Загрузка данных...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Пагинация -->
+      <div class="table-footer" id="services-pagination">
+        <div class="table-footer__info" id="services-pagination-info" style="font-size: 12px; color: #64748b; font-family: 'Inter', sans-serif;"></div>
+        <div class="table-footer__controls" style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn--ghost btn--sm" id="services-page-prev">←</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="services-page-next">→</button>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+              <section class="dashboard" data-dashboard="patients" aria-label="Пациенты">
+  
+  <!-- 1. KPI БЛОК (8 карточек: 2 ряда по 4) -->
+  <div class="kpi-grid">
+    <!-- Ряд 1 -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">База пациентов</h3>
+        <p class="kpi-card__subtitle">Уникальные (ФИО+ДР)</p>
+      </header>
+      <div class="kpi-card__body"><div id="patients-kpi-unique" class="kpi-card__value">0</div></div>
+    </article>
+
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">Всего визитов</h3>
+        <p class="kpi-card__subtitle">Посещения клиники</p>
+      </header>
+      <div class="kpi-card__body"><div id="patients-kpi-visits" class="kpi-card__value">0</div></div>
+    </article>
+
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">Количество услуг</h3>
+        <p class="kpi-card__subtitle">Объем оказанной помощи</p>
+      </header>
+      <div class="kpi-card__body"><div id="patients-kpi-services" class="kpi-card__value">0</div></div>
+    </article>
+
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">Качество данных</h3>
+        <p class="kpi-card__subtitle">Доля идентифицированных</p>
+      </header>
+      <div class="kpi-card__body"><div id="patients-kpi-data-quality" class="kpi-card__value">0%</div></div>
+    </article>
+
+    <!-- Ряд 2 -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">Чек на пациента</h3>
+        <p class="kpi-card__subtitle">Выручка / Пациенты</p>
+      </header>
+      <div class="kpi-card__body"><div id="patients-kpi-avg-check-patient" class="kpi-card__value">0 ₽</div></div>
+    </article>
+
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">Чек на визит</h3>
+        <p class="kpi-card__subtitle">Средняя стоимость посещения</p>
+      </header>
+      <div class="kpi-card__body"><div id="patients-kpi-avg-check-visit" class="kpi-card__value">0 ₽</div></div>
+    </article>
+
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">Услуг на пациента</h3>
+        <p class="kpi-card__subtitle">Глубина потребления</p>
+      </header>
+      <div class="kpi-card__body"><div id="patients-kpi-services-per-patient" class="kpi-card__value">0</div></div>
+    </article>
+
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <h3 class="kpi-card__title">Средняя выручка</h3>
+        <p class="kpi-card__subtitle">На одного уникального</p>
+      </header>
+      <div class="kpi-card__body"><div id="patients-kpi-avg-revenue-patient" class="kpi-card__value">0 ₽</div></div>
+    </article>
+  </div>
+
+  <!-- 2. ДИНАМИКА (Full Width) -->
+  <article class="card card--chart" id="patients-dynamics-card" style="margin-top: 20px;">
+    <header class="card__header">
+      <h2 class="card__title">Динамика пациентопотока</h2>
+      <p class="card__subtitle">Пациенты и визиты по месяцам</p>
+    </header>
+    <div class="card__body">
+      <div class="chart-wrapper" style="height: 320px;">
+        <canvas id="patients-dynamics-chart-canvas"></canvas>
+      </div>
+    </div>
+  </article>
+
+  <!-- 3. SANKEY (Full Width) -->
+  <article class="card card--flow" style="margin-top: 20px;">
+    <header class="card__header">
+      <div>
+        <h2 class="card__title">Маршруты пациентов</h2>
+        <p class="card__subtitle">Потоки: Пациенты → Отделения / Услуги</p>
+      </div>
+      <div class="services-controls">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="sr-only" for="patients-flow-mode-select">Режим отображения потоков пациентов</label>
+          <select id="patients-flow-mode-select" class="input">
+            <option value="departments">Пациенты → Отделения</option>
+            <option value="services">Пациенты → Услуги</option>
+          </select>
+        </div>
+      </div>
+    </header>
+    <div class="card__body">
+      <div class="flow-chart-container" id="patients-flow-sankey" style="height: 450px;"></div>
+    </div>
+  </article>
+
+  <!-- 4. СЕТКА: Демография + Топ Услуг (Таблица) -->
+  <div class="content-grid" style="margin-top: 20px;">
+    
+    <!-- Демография (График) -->
+    <article class="card card--chart" id="patients-demographics-card">
+      <header class="card__header">
+        <h2 class="card__title">Портрет пациента</h2>
+        <p class="card__subtitle">Пол и возраст аудитории</p>
+      </header>
+      <div class="card__body">
+        <div class="chart-wrapper">
+          <canvas id="patients-demographics-chart"></canvas>
+        </div>
+        <div class="kpi-card__title-row" style="justify-content: center; gap: 20px; margin-top: 10px; font-size: 12px;">
+          <span style="color: #3b82f6;">● Мужчины: <b id="demo-male-pct">0%</b></span>
+          <span style="color: #ec4899;">● Женщины: <b id="demo-female-pct">0%</b></span>
+        </div>
+      </div>
+    </article>
+
+    <!-- Топ услуг (Таблица с кол-вом пациентов) -->
+    <article class="card card--table">
+      <header class="card__header">
+        <h2 class="card__title">Востребованные услуги</h2>
+        <p class="card__subtitle">Топ по количеству пациентов</p>
+      </header>
+      <div class="card__body">
+        <div class="placeholder-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Услуга</th>
+                <th class="align-right">Пациентов</th>
+                <th class="align-right">Доля базы</th>
+              </tr>
+            </thead>
+            <tbody id="patients-top-services-tbody">
+              <tr><td class="muted" colspan="3">Загрузка...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- 5. НИЖНЯЯ ТАБЛИЦА (Сворачиваемая) -->
+  <article class="card card--table card--collapsible" id="patients-departments-card" style="margin-top: 20px;">
+    <header class="card__header">
+      <div>
+        <h3 class="card__title">Пациенты по отделениям</h3>
+        <p class="card__subtitle">Распределение пациентов, визитов, услуг и выручки по отделениям</p>
+      </div>
+      <button type="button" class="btn btn--ghost btn--sm card__collapse-btn" data-collapse-target="patients-departments-card" aria-expanded="true">
+        Свернуть
+      </button>
+    </header>
+    <div class="card__body">
+      <div class="placeholder-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Отделение</th>
+              <th class="align-right">Пациентов</th>
+              <th class="align-right">Визитов</th>
+              <th class="align-right">Услуг</th>
+              <th class="align-right">Выручка</th>
+              <th class="align-right">Услуг / пациент</th>
+              <th class="align-right">Чек / пациент</th>
+            </tr>
+          </thead>
+          <tbody id="patients-departments-table-body">
+            <tr><td class="muted" colspan="7">Загрузка данных...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </article>
+</section>
+
+              <section class="dashboard" data-dashboard="programs" aria-label="Программы">
+  
+  <!-- БЛОК 1: Стратегические KPI -->
+  <div class="kpi-grid">
+    <!-- Доля ДМС (Риск-метрика) -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Доля ДМС в выручке</h3>
+          <span class="help-icon" data-tooltip="Доля выручки от страховых компаний. Значение выше 60% считается рискованным (зависимость от страховщиков).">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Уровень зависимости</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="prog-kpi-dms-share" class="kpi-card__value">0 %</div>
+      </div>
+    </article>
+
+    <!-- Маржинальность портфеля -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Маржа портфеля</h3>
+          <span class="help-icon" data-tooltip="Средневзвешенная рентабельность по всем каналам продаж.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Эффективность продаж</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="prog-kpi-total-margin" class="kpi-card__value" style="color: #0abab5;">0 %</div>
+      </div>
+    </article>
+
+    <!-- Самый прибыльный канал -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Лидер по прибыли</h3>
+          <span class="help-icon" data-tooltip="Канал продаж, генерирующий наибольшую абсолютную массу чистой прибыли.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Основной источник денег</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="prog-kpi-leader" class="kpi-card__value" style="font-size: 18px;">Нет данных</div>
+      </div>
+    </article>
+
+    <!-- Средний чек по физ.лицам -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Средний чек (Физ.лица)</h3>
+          <span class="help-icon" data-tooltip="Средний чек по прямым пациентам (самый маржинальный сегмент).">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Индикатор платежеспособности</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="prog-kpi-check-phys" class="kpi-card__value">0 ₽</div>
+      </div>
+    </article>
+  </div>
+
+  <!-- БЛОК 2: Визуализация и детализация -->
+  <div class="content-grid" style="margin-top: 20px;">
+    <!-- Левая колонка: График -->
+    <article class="card card--chart">
+      <header class="card__header">
+        <h2 class="card__title">Эффективность каналов продаж</h2>
+        <p class="card__subtitle">Сравнение Выручки (Объем) и Прибыли (Качество)</p>
+      </header>
+      <div class="card__body">
+        <div class="chart-wrapper" style="height: 300px;">
+          <canvas id="programs-efficiency-chart"></canvas>
+        </div>
+      </div>
+    </article>
+
+    <!-- Правая колонка: Таблица -->
+    <article class="card card--table">
+      <header class="card__header">
+        <h2 class="card__title">P&L по программам</h2>
+        <p class="card__subtitle">Детальная экономика каналов</p>
+      </header>
+      <div class="card__body">
+        <div class="placeholder-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Программа / Канал</th>
+                <th class="align-right">Пациентов</th>
+                <th class="align-right">Выручка</th>
+                <th class="align-right">Себестоим.</th>
+                <th class="align-right">Прибыль</th>
+                <th class="align-right">Маржа</th>
+              </tr>
+            </thead>
+            <tbody id="programs-table-body">
+              <!-- JS заполнит эту секцию -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+              <section class="dashboard" data-dashboard="costs" aria-label="Юнит-экономика">
+  
+  <!-- 1. KPI: ЗДОРОВЬЕ И ОТКЛОНЕНИЯ -->
+  <div class="kpi-grid">
+    <!-- Токсичная выручка -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Токсичная выручка</h3>
+          <span class="help-icon" data-tooltip="Выручка от услуг с отрицательной маржинальностью (OpEx > Цены).">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Генерация прямых убытков</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="cost-kpi-toxic-rev" class="kpi-card__value" style="color: #ef4444;">0 ₽</div>
+        <div id="cost-kpi-toxic-share" class="kpi-card__delta muted">0% от общей</div>
+      </div>
+    </article>
+
+    <!-- Материалоемкость (С бенчмарком) -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Материалоемкость</h3>
+          <span class="help-icon" data-tooltip="Доля прямых материальных затрат (38) в выручке. Сравнение со средней по клинике.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Расходники / Выручка</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="cost-kpi-mat-intensity" class="kpi-card__value">0%</div>
+        <!-- Сюда JS вставит сравнение со средним -->
+        <div id="cost-kpi-mat-benchmark" class="kpi-card__delta muted"></div>
+      </div>
+    </article>
+
+    <!-- Ошибки прайса -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Убыточные услуги</h3>
+          <span class="help-icon" data-tooltip="Количество уникальных позиций прайса, где расходы превышают цену.">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Требуют пересмотра цены</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="cost-kpi-price-errors" class="kpi-card__value" style="color: #ef4444;">0</div>
+      </div>
+    </article>
+
+    <!-- Валовая маржа (OpEx Margin) -->
+    <article class="card kpi-card">
+      <header class="kpi-card__header">
+        <div class="kpi-card__title-row">
+          <h3 class="kpi-card__title">Валовая маржа</h3>
+          <span class="help-icon" data-tooltip="Маржинальность после вычета всех переменных расходов (OpEx).">?</span>
+        </div>
+        <p class="kpi-card__subtitle">Эффективность портфеля</p>
+      </header>
+      <div class="kpi-card__body">
+        <div id="cost-kpi-gross-margin" class="kpi-card__value" style="color: #0abab5;">0%</div>
+        <div id="cost-kpi-gross-benchmark" class="kpi-card__delta muted"></div>
+      </div>
+    </article>
+  </div>
+
+  <!-- 2. ВИЗУАЛИЗАЦИЯ: МАТРИЦА И ДРАЙВЕРЫ -->
+  <div class="dashboard-split" style="margin-top: 24px; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px;">
+    
+    <!-- Левая колонка: Матрица Эффективности -->
+    <article class="card card--chart">
+      <header class="card__header">
+        <div>
+          <h2 class="card__title">Матрица маржинальности</h2>
+          <p class="card__subtitle">Риск (OpEx %) vs Прибыль (Rub)</p>
+        </div>
+        <!-- Кнопка Expand -->
+        <button type="button" class="btn btn--ghost btn--sm" id="btn-expand-cost-matrix" title="Развернуть">⤢</button>
+      </header>
+      <div class="card__body">
+        <div class="chart-wrapper" style="height: 320px;">
+          <canvas id="cost-matrix-chart"></canvas>
+        </div>
+      </div>
+    </article>
+
+    <!-- Правая колонка: Топ Драйверов Затрат -->
+    <article class="card card--chart">
+      <header class="card__header">
+        <div>
+          <h2 class="card__title">Топ драйверов затрат</h2>
+          <p class="card__subtitle">Услуги с максимальным OpEx</p>
+        </div>
+      </header>
+      <div class="card__body">
+        <div class="chart-wrapper" style="height: 320px;">
+          <canvas id="cost-drivers-chart"></canvas>
+        </div>
+      </div>
+    </article>
+  </div>
+
+    <!-- 3. ТАБЛИЦА: ПОЛНЫЙ РЕЕСТР ЗАТРАТ (С пагинацией и поиском) -->
+  <article class="card card--table" style="margin-top: 24px;">
+    <header class="card__header" style="flex-wrap: wrap; gap: 10px;">
+      <div>
+        <h2 class="card__title">Реестр затрат (Юнит-экономика)</h2>
+        <p class="card__subtitle">ABC-анализ и маржинальность по каждой услуге</p>
+      </div>
+
+      <!-- КОНТРОЛЫ (Поиск и Фильтр) -->
+      <div class="services-controls" style="margin-left: auto;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <select id="costs-filter-select" class="input">
+            <option value="all">Все услуги</option>
+            <option value="abc_a">Категория A (Топ затрат)</option>
+            <option value="loss">Убыточные (Margin < 0)</option>
+            <option value="low_margin">Низкая маржа (< 20%)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0; min-width: 250px;">
+          <input
+            id="costs-search-input"
+            type="text"
+            class="input"
+            placeholder="Поиск услуги..."
+          />
+        </div>
+      </div>
+    </header>
+
+    <div class="card__body">
+      <div class="placeholder-table">
+        <table>
+          <thead>
+            <tr>
+              <!-- Добавляем классы sortable и data-sort для сортировки -->
+              <th class="sortable" data-sort="name">Услуга</th>
+              <th class="align-right sortable" data-sort="revenue">Выручка</th>
+              <th class="align-right sortable" data-sort="opex">OpEx (Сумма)</th>
+              <th class="align-right sortable" data-sort="opexShare" title="Доля услуги в общих расходах">Вклад (ABC)</th>
+              <th class="align-right sortable" data-sort="margin">Маржа (₽)</th>
+              <th class="align-right sortable" data-sort="marginPct">Рент. %</th>
+            </tr>
+          </thead>
+          <tbody id="cost-optimization-tbody">
+            <tr><td class="muted" colspan="6">Загрузка данных...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ПАГИНАЦИЯ -->
+      <div class="table-footer">
+          <div class="table-footer__info" id="costs-pagination-info"></div>
+          <div class="table-footer__controls">
+              <button type="button" class="btn btn--ghost btn--sm" id="costs-page-prev">←</button>
+              <button type="button" class="btn btn--ghost btn--sm" id="costs-page-next">→</button>
+          </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+              <section class="dashboard" data-dashboard="fot" aria-label="Фонд и мотивация">
+                <!-- Сценарный режим мотивации -->
+                <div class="scenario-panel">
+                  <div class="scenario-panel__header">
+                    <div class="scenario-panel__title">Сценарий изменения мотивации</div>
+                    <span class="scenario-panel__badge">
+                      <span id="motivation-scenario-label">100%</span> от текущих процентов
+                    </span>
+                  </div>
+                  <div class="scenario-panel__body">
+                    <label class="sr-only" for="motivation-scenario-slider">Сценарий изменения мотивации, %</label>
+                    <input
+                      type="range"
+                      id="motivation-scenario-slider"
+                      min="50"
+                      max="150"
+                      step="5"
+                      value="100"
+                    />
+                    <div class="scenario-panel__values">
+                      <span>Двигая ползунок, вы моделируете изменение мотивации по всем услугам.</span>
+                      <span class="muted">Результат отражается в KPI ниже (сценарные значения).</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="kpi-grid">
+                  <article class="card kpi-card">
+                    <header class="kpi-card__header">
+                      <div class="kpi-card__title-row">
+                        <h3 class="kpi-card__title">Фонд 60%</h3>
+                        <span class="help-icon" data-tooltip="Сумма расчётного фонда мотивации (60% от прибыли по методологии).">?</span>
+                      </div>
+                      <p class="kpi-card__subtitle">Доступный фонд мотивации за период A</p>
+                    </header>
+                    <div class="kpi-card__body">
+                      <div id="kpi-mot-fund" class="kpi-card__value">0 ₽</div>
+                    </div>
+                  </article>
+                  <article class="card kpi-card">
+                    <header class="kpi-card__header">
+                      <div class="kpi-card__title-row">
+                        <h3 class="kpi-card__title">Новые суммы</h3>
+                        <span class="help-icon" data-tooltip="Сумма начисленной мотивации (новые суммы) по всем услугам.">?</span>
+                      </div>
+                      <p class="kpi-card__subtitle">Фактически начисленная мотивация</p>
+                    </header>
+                    <div class="kpi-card__body">
+                      <div id="kpi-mot-new" class="kpi-card__value">0 ₽</div>
+                      <div id="kpi-mot-new-scenario" class="kpi-card__delta muted">Сценарий: 0 ₽</div>
+                    </div>
+                  </article>
+                  <article class="card kpi-card">
+                    <header class="kpi-card__header">
+                      <div class="kpi-card__title-row">
+                        <h3 class="kpi-card__title">Соц.отчисления</h3>
+                        <span class="help-icon" data-tooltip="Сумма социальных отчислений с новых сумм мотивации.">?</span>
+                      </div>
+                      <p class="kpi-card__subtitle">Нагрузка на фонд отчислений</p>
+                    </header>
+                    <div class="kpi-card__body">
+                      <div id="kpi-mot-social" class="kpi-card__value">0 ₽</div>
+                      <div id="kpi-mot-social-scenario" class="kpi-card__delta muted">Сценарий: 0 ₽</div>
+                    </div>
+                  </article>
+                  <article class="card kpi-card">
+                    <header class="kpi-card__header">
+                      <div class="kpi-card__title-row">
+                        <h3 class="kpi-card__title">Резерв фонда</h3>
+                        <span class="help-icon" data-tooltip="Неиспользованная часть фонда мотивации (резерв).">?</span>
+                      </div>
+                      <p class="kpi-card__subtitle">Запас фонда по положению</p>
+                    </header>
+                    <div class="kpi-card__body">
+                      <div id="kpi-mot-reserve" class="kpi-card__value">0 ₽</div>
+                      <div id="kpi-mot-reserve-scenario" class="kpi-card__delta muted">Сценарий: 0 ₽</div>
+                    </div>
+                  </article>
+                </div>
+
+                <!-- Одиночная карточка с таблицей на всю ширину -->
+                <article class="card" style="margin-top: 20px;">
+                  <header class="card__header">
+                    <div>
+                      <h2 class="card__title">Топ отделений по использованию фонда</h2>
+                      <p class="card__subtitle">Фонд, новые суммы, соц.отчисления и резерв по отделениям</p>
+                    </div>
+                  </header>
+                  <div class="card__body">
+                    <div class="placeholder-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Отделение</th>
+                            <th class="align-right">Фонд 60%</th>
+                            <th class="align-right">Новые суммы</th>
+                            <th class="align-right">Соц.отчисления</th>
+                            <th class="align-right">Резерв</th>
+                            <th class="align-right">Использование фонда</th>
+                          </tr>
+                        </thead>
+                        <tbody id="motivation-departments-body">
+                          <!-- Сюда JS вставит строки -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </article>
+              </section>
+
+              <section class="dashboard" data-dashboard="motivation-doctors" aria-label="Мотивация по врачам">
+                <div class="content-grid">
+                  <article class="card card--chart">
+                    <header class="card__header">
+                      <div>
+                        <h2 class="card__title">Использование фонда по врачам</h2>
+                        <p class="card__subtitle">Доля использованного фонда 60% по врачам (новые суммы / фонд)</p>
+                      </div>
+                    </header>
+                    <div class="card__body">
+                      <div class="chart-wrapper">
+                        <canvas id="motivation-doctors-chart"></canvas>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="card card--table">
+                    <header class="card__header">
+                      <div>
+                        <h2 class="card__title">Топ врачей по использованию фонда</h2>
+                        <p class="card__subtitle">Фонд, новые суммы, соц.отчисления и резерв по каждому врачу</p>
+                      </div>
+                    </header>
+                    <div class="card__body">
+                      <div class="placeholder-table">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Врач</th>
+                              <th class="align-right">Фонд 60%</th>
+                              <th class="align-right">Новые суммы</th>
+                              <th class="align-right">Соц.отчисления</th>
+                              <th class="align-right">Резерв</th>
+                              <th class="align-right">Использование фонда</th>
+                            </tr>
+                          </thead>
+                          <tbody id="motivation-doctors-body">
+                            <tr>
+                              <td class="muted" colspan="6">
+                                Данные будут загружены и рассчитаны после подключения источника.
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section class="dashboard" data-dashboard="payments" aria-label="Оплаты">
+                <div class="card">
+                  <header class="card__header">
+                    <h2 class="card__title">Оплаты и платёжная дисциплина</h2>
+                    <p class="card__subtitle">Раздел в разработке. Скелет интерфейса готов.</p>
+                  </header>
+                  <div class="card__body">
+                    <p class="muted">Здесь будет анализ способов оплаты и лагов между оказанием и оплатой.</p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- =========================
+         Loader Skeletons
+         ========================= -->
+    <div class="loader-overlay hidden" id="loader">
+      <div class="skeleton-wrapper">
+        <!-- Skeleton for Sidebar -->
+        <aside class="skeleton-sidebar">
+          <div class="skeleton skeleton-card" style="height: 300px;"></div>
+          <div class="skeleton skeleton-card" style="height: 250px;"></div>
+          <div class="skeleton skeleton-card" style="height: 350px;"></div>
+        </aside>
+        <!-- Skeleton for Content -->
+        <section class="skeleton-content">
+          <div class="skeleton skeleton-tabs"></div>
+          <div class="skeleton-kpi-grid">
+            <div class="skeleton skeleton-kpi"></div>
+            <div class="skeleton skeleton-kpi"></div>
+            <div class="skeleton skeleton-kpi"></div>
+            <div class="skeleton skeleton-kpi"></div>
+          </div>
+          <div class="skeleton-content-grid">
+            <div class="skeleton skeleton-chart"></div>
+            <div class="skeleton skeleton-table"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- =========================
+         Scripts
+         ========================= -->
+    <!-- Highcharts -->
+    <script defer src="https://code.highcharts.com/highcharts.js"></script>
+    <script defer src="https://code.highcharts.com/modules/sankey.js"></script>
+    <script defer src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script defer src="main.js"></script>
+
+    <!-- =========================
+         Modals
+         ========================= -->
+
+    <!-- 1. Модалка: Затраты клиники -->
+    <div class="modal" id="clinic-costs-modal" aria-hidden="true">
+      <div class="modal__backdrop" data-modal-close></div>
+      <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="clinic-costs-title" aria-describedby="clinic-costs-caption">
+        <header class="modal__header">
+          <h2 class="modal__title" id="clinic-costs-title">Структура затрат клиники</h2>
+          <button class="modal__close" type="button" data-modal-close aria-label="Закрыть">✕</button>
+        </header>
+        <div class="modal__body">
+          <p class="muted" id="clinic-costs-caption" style="margin-bottom: 12px;">
+            Детализация основных статей затрат и их доли в выручке.
+          </p>
+          <div class="placeholder-table">
+            <table>
+              <thead><tr><th>Статья</th><th class="align-right">Сумма</th><th class="align-right">Доля</th></tr></thead>
+              <tbody id="clinic-costs-modal-body"><tr><td class="muted" colspan="3">Загрузка...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- МОДАЛКА: ДЕТАЛИЗАЦИЯ УСЛУГИ (ИСПРАВЛЕННАЯ) -->
+    <div class="modal" id="service-details-modal" aria-hidden="true">
+      <div class="modal__backdrop" data-modal-close></div>
+      <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="service-details-title" aria-describedby="service-details-caption">
+        <header class="modal__header">
+          <h2 class="modal__title" id="service-details-title">Детализация услуги</h2>
+          <button class="modal__close" type="button" data-modal-close>✕</button>
+        </header>
+        
+        <div class="modal__body">
+          <!-- 1. Заголовок с ID (Это было на месте) -->
+          <div id="service-details-caption" style="margin-bottom: 12px;">
+            <p class="muted">Загрузка данных...</p>
+          </div>
+
+          <!-- 2. Сетка таблиц -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            
+            <!-- ЛЕВАЯ ТАБЛИЦА -->
+            <div class="placeholder-table">
+              <h3 style="font-size: 14px; margin-bottom: 6px;">По отделениям</h3>
+              <table style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Отделение</th>
+                    <th class="align-right">Кол-во</th>
+                    <th class="align-right">Выручка</th>
+                    <th class="align-right">Прибыль</th>
+                  </tr>
+                </thead>
+                <!-- ВОТ ЗДЕСЬ БЫЛА ПРОПАЖА №1. Я ДОБАВИЛ ID -->
+                <tbody id="service-details-departments-body">
+                  <tr><td colspan="4">Нет данных</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- ПРАВАЯ ТАБЛИЦА -->
+            <div class="placeholder-table">
+              <h3 style="font-size: 14px; margin-bottom: 6px;">По врачам</h3>
+              <table style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Врач</th>
+                    <th class="align-right">Кол-во</th>
+                    <th class="align-right">Выручка</th>
+                    <th class="align-right">Прибыль</th>
+                  </tr>
+                </thead>
+                <!-- ВОТ ЗДЕСЬ БЫЛА ПРОПАЖА №2. Я ДОБАВИЛ ID -->
+                <tbody id="service-details-doctors-body">
+                  <tr><td colspan="4">Нет данных</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. График -->
+          <p style="margin-bottom: 8px; font-weight: 500;">Структура P&L по услуге</p>
+          
+          <!-- Обертка графика -->
+          <div class="chart-wrapper modal-flow-wrapper" style="height: 200px; position: relative;">
+            <canvas id="service-details-flow-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Модалка: Детализация врача -->
+    <div class="modal" id="doctor-details-modal" aria-hidden="true">
+      <div class="modal__backdrop" data-modal-close></div>
+      <div class="modal__dialog" role="dialog" aria-modal="true" style="max-width: 900px;">
+        <header class="modal__header">
+          <div>
+            <h2 class="modal__title" id="doctor-details-name">Имя Врача</h2>
+            <p class="modal__body muted" id="doctor-details-subtitle" style="margin-top:4px;">Сводка</p>
+          </div>
+          <button class="modal__close" type="button" data-modal-close>✕</button>
+        </header>
+        <div class="modal__body">
+          <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+            <div class="card kpi-card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div class="kpi-card__label">Выручка</div>
+              <div class="kpi-card__value" id="doc-modal-revenue">0 ₽</div>
+            </div>
+            <div class="card kpi-card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div class="kpi-card__label">Чистая прибыль</div>
+              <div class="kpi-card__value" id="doc-modal-profit">0 ₽</div>
+            </div>
+            <div class="card kpi-card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div class="kpi-card__label">Рентабельность</div>
+              <div class="kpi-card__value" id="doc-modal-margin">0 %</div>
+            </div>
+          </div>
+          <div id="doc-modal-mix-bar" style="margin-bottom: 24px;"></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+            <div>
+              <h4 style="margin-bottom: 12px; font-size: 14px; font-family: 'Inter', sans-serif;">Структура экономики</h4>
+              <div class="chart-wrapper" style="height: 250px;"><canvas id="doc-modal-chart"></canvas></div>
+            </div>
+            <div>
+              <h4 style="margin-bottom: 12px; font-size: 14px; font-family: 'Inter', sans-serif;">Топ-5 услуг</h4>
+              <div class="placeholder-table">
+                <table>
+                  <thead><tr><th>Услуга</th><th class="align-right">Кол-во</th><th class="align-right">Выручка</th></tr></thead>
+                  <tbody id="doc-modal-services-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Модалка: Карта отделений -->
+    <div class="modal" id="scatter-modal" aria-hidden="true">
+      <div class="modal__backdrop" data-modal-close></div>
+      <div class="modal__dialog" role="dialog" aria-modal="true" style="max-width: 90vw; height: 90vh; display: flex; flex-direction: column;">
+        <header class="modal__header">
+          <h2 class="modal__title">Карта эффективности отделений</h2>
+          <button class="modal__close" type="button" data-modal-close>✕</button>
+        </header>
+        <div class="modal__body" style="flex: 1; padding: 20px; min-height: 0;">
+          <div class="chart-wrapper" style="height: 100%; width: 100%;">
+            <canvas id="departments-portfolio-scatter-modal"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Модалка: Матрица врачей -->
+    <div class="modal" id="doctors-scatter-modal" aria-hidden="true">
+      <div class="modal__backdrop" data-modal-close></div>
+      <div class="modal__dialog" role="dialog" aria-modal="true" style="max-width: 95vw; height: 90vh; display: flex; flex-direction: column;">
+        <header class="modal__header">
+          <h2 class="modal__title">Матрица эффективности врачей</h2>
+          <button class="modal__close" type="button" data-modal-close>✕</button>
+        </header>
+        <div class="modal__body" style="flex: 1; padding: 20px; min-height: 0;">
+          <div class="chart-wrapper" style="height: 100%; width: 100%;">
+            <canvas id="doctors-scatter-chart-modal"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Модалка: Большая матрица маржинальности (Costs) -->
+    <div class="modal" id="cost-matrix-modal" aria-hidden="true">
+      <div class="modal__backdrop" data-modal-close></div>
+      <div class="modal__dialog" role="dialog" aria-modal="true" style="max-width: 95vw; height: 90vh; display: flex; flex-direction: column;">
+        <header class="modal__header">
+          <h2 class="modal__title">Матрица маржинальности (Детализация)</h2>
+          <button class="modal__close" type="button" data-modal-close>✕</button>
+        </header>
+        <div class="modal__body" style="flex: 1; padding: 20px; min-height: 0;">
+          <div class="chart-wrapper" style="height: 100%; width: 100%;">
+            <canvas id="cost-matrix-chart-modal"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
