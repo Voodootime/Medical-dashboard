@@ -1,180 +1,27 @@
-/**
- * MUE CONFIGURATION v5.0
- * Единый источник констант и ставок согласно Спецификации.
- */
-const MUE_CONFIG = {
-  // Налоговые ставки (от ФОТ сдельной части)
-  TAXES: {
-    PENSION: 0.22,   // 22.0% (ПФР)
-    FOMS: 0.051,     // 5.1% (ФОМС)
-    FSS: 0.029,      // 2.9% (ФСС)
-    INJURY: 0.002,   // 0.2% (Травматизм)
-    // Итоговая расчетная ставка: 30.2%
-    get TOTAL_RATE() { return this.PENSION + this.FOMS + this.FSS + this.INJURY; }
-  },
-
-  // Распределение чистого котла (Net Wage Pool)
-  SPLIT: {
-    MEDICAL: 0.84,   // 84% - Врачу (ID 56)
-    ADMIN: 0.16      // 16% - Клинике/АУП (ID 57)
-  },
-
-  // Комиссии эквайринга (входят в себестоимость)
-  COMMISSION: {
-    CARD: 0.017,     // 1.7%
-    CASH: 0.01,      // 1.0% (Инкассация)
-    WIRE: 0.00       // 0%
-  },
-
-  // Лимиты и стратегические показатели
-  LIMITS: {
-    FOT_BUDGET_RATE: 0.60 // 60% от Прибыли (ID 44)
-  }
-};
-
-"use strict";
-
-
-/**
- * Глобальное состояние приложения.
- */
-var appState = {
-  periodA: {
-    mode: "month",
-    year: new Date().getFullYear(),
-    monthFrom: new Date().getMonth() + 1,
-    monthTo: new Date().getMonth() + 1
-  },
-  periodB: {
-    enabled: false,
-    mode: "prevMonth",
-    year: new Date().getFullYear() - 1,
-    monthFrom: new Date().getMonth() + 1,
-    monthTo: new Date().getMonth() + 1
-  },
-  filters: {
-    department: "all",
-    doctor: "all",
-    contractType: "all",
-    program: "all", // <-- НОВОЕ
-    serviceFlag: "all",
-    paymentMethod: "all"
-  },
-  view: {
-    activeDashboard: "overview",
-    doctorsShowAll: false,
-    doctorsPage: 1,
-    doctorsPageSize: 50,
-    selectedDoctor: null,
-    doctorSearch: "",           // строка поиска по врачам
-    departmentsPage: 1,         // задел под пагинацию отделений
-    departmentsPageSize: 50
-  },
-  scenario: {
-    motivationMultiplier: 1
-  },
-    services: {
-    mode: "top", // top | all | loss
-    page: 1      // текущая страница при режиме all / loss
-  },
-  costs: {
-    mode: "departments" // departments | services | doctors
-  },
-  patientsServices: {
-    mode: "top", // top | all
-    page: 1      // текущая страница для режима "all"
-  },
-  patientsFlow: {
-    mode: "departments" // departments | services
-  }
-};
-
-// Локальное состояние для таблицы HR Drill-down
-var hrTableState = {
-  rawData: [],      // Все врачи выбранной категории
-  filteredData: [], // Врачи после поиска
-  category: "",     // Название категории
-  page: 1,
-  pageSize: 10,
-  searchTerm: ""
-};
-
-/**
- * Данные и графики.
- */
-var rawDataRows = [];
-var preparedDataRows = [];
-
-// Глобальная строка поиска по врачам (для обратной совместимости)
-var doctorSearchQuery = "";
-
-var overviewChart = null;
-var departmentFlowChart = null;
-var doctorFlowChart = null;
-var clinicWaterfallChart = null;
-var clinicCostStructureChart = null;
-var motivationChart = null;
-var servicesChart = null;
-var serviceFlowChart = null;
-var costsStructureChart = null; // график структуры себестоимости
-var motivationDoctorsChart = null;
-var patientsFlowChart = null; // график потока пациентов по месяцам
-var patientsTopServicesChart = null;
-var patientsFlowDiagram = null; // Sankey-поток пациентов (Highcharts)
-var lastDepartmentForChart = null;
-var lastDoctorForChart = null;
-
-var departmentsPortfolioChart = null;
-
-// Состояние для таблицы в разделе Себестоимость
-var costsTableState = {
-  page: 1,
-  pageSize: 100, // Требование: пагинация по 100
-  sortField: 'opexShare', // По умолчанию сортируем по вкладу в расходы (ABC)
-  sortDir: 'desc',        // От большего к меньшему
-  search: '',
-  filter: 'all'
-};
-
-// Дополнительные графики по отделениям
-var departmentsPortfolioChart = null;
-var departmentsPortfolioScatterChart = null;
-
-// Конфиг сегментов портфеля отделений с ИКОНКАМИ
-var DEPARTMENT_PORTFOLIO_SEGMENTS = {
-  nabogatom: {
-    key: "nabogatom",
-    label: "На богатом",
-    icon: "💎", // Алмаз
-    description: "Много работы и много денег. Локомотивы портфеля.",
-    colorStart: "#0f766e",
-    colorEnd: "#14b8a6"
-  },
-  virtuoz: {
-    key: "virtuoz",
-    label: "Виртуозы",
-    icon: "🎯", // Мишень (точность)
-    description: "Мало объёма, но высокая маржа. Ювелиры.",
-    colorStart: "#7c2d12",
-    colorEnd: "#f97316"
-  },
-  stakhanov: {
-    key: "stakhanov",
-    label: "Стахановцы",
-    icon: "🚜", // Трактор (пашут)
-    description: "Тащат на себе объём, а денег мало.",
-    colorStart: "#1d4ed8",
-    colorEnd: "#60a5fa"
-  },
-  sleeping: {
-    key: "sleeping",
-    label: "Спящая красавица",
-    icon: "🛌", // Кровать
-    description: "Ни объёма, ни маржи. Кандидаты на пересборку.",
-    colorStart: "#6b21a8",
-    colorEnd: "#a855f7"
-  }
-};
+import {
+  MUE_CONFIG,
+  appState,
+  hrTableState,
+  dataState,
+  chartState,
+  costsTableState,
+  DEPARTMENT_PORTFOLIO_SEGMENTS,
+  updatePeriod,
+  togglePeriodB,
+  setActiveDashboard,
+  setDoctorsPage,
+  setDoctorSearch,
+  setDoctorsShowAll,
+  setServicesMode,
+  setServicesPage,
+  setCostsMode,
+  setPatientsServicesMode,
+  setPatientsServicesPage,
+  setPatientsFlowMode,
+  setDataRows,
+  resetDataRows,
+  setCostsTablePage
+} from './state.js';
 
 function computeMedianValue(values) {
   if (!values || !values.length) return 0;
@@ -463,15 +310,13 @@ function loadData() {
         throw new Error("Файл data/data.json должен содержать массив объектов.");
       }
 
-      rawDataRows = json;
-      preparedDataRows = normalizeData(rawDataRows);
-      console.log("Загружено строк из JSON:", preparedDataRows.length);
-    })
-    .catch(function (error) {
-      console.error("Ошибка загрузки данных:", error);
-      rawDataRows = [];
-      preparedDataRows = [];
-    });
+        setDataRows(json, normalizeData(json));
+        console.log("Загружено строк из JSON:", dataState.preparedDataRows.length);
+      })
+      .catch(function (error) {
+        console.error("Ошибка загрузки данных:", error);
+        resetDataRows();
+      });
 }
 
 /**
@@ -1045,7 +890,7 @@ function openClinicCostsModal(metrics) {
  */
 function openServiceDetailsModal(serviceCode, serviceName) {
   // 1. Проверка данных
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
 
   var modal = document.getElementById("service-details-modal");
   if (!modal) return;
@@ -1067,7 +912,7 @@ function openServiceDetailsModal(serviceCode, serviceName) {
   if (titleEl) titleEl.textContent = "Детализация: " + (serviceName || "Услуга");
 
   // 3. Фильтрация данных
-  var filtered = applyFilters(preparedDataRows, appState.filters);
+  var filtered = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filtered, appState.periodA);
 
   var serviceRows = periodRows.filter(function (row) {
@@ -1083,7 +928,7 @@ function openServiceDetailsModal(serviceCode, serviceName) {
     captionEl.textContent = "Нет данных по выбранной услуге за текущий период.";
     depBody.innerHTML = ""; 
     docBody.innerHTML = "";
-    if (serviceFlowChart) { serviceFlowChart.destroy(); serviceFlowChart = null; }
+    if (chartState.serviceFlowChart) { chartState.serviceFlowChart.destroy(); chartState.serviceFlowChart = null; }
     chartWrapper.innerHTML = ""; 
     return;
   }
@@ -1217,9 +1062,9 @@ function openServiceDetailsModal(serviceCode, serviceName) {
   renderMiniTable(docBody, byDoctor, true); // Включаем режим Врачей
 
   // 8. ОТРИСОВКА ГРАФИКА
-  if (serviceFlowChart) {
-      serviceFlowChart.destroy();
-      serviceFlowChart = null;
+  if (chartState.serviceFlowChart) {
+      chartState.serviceFlowChart.destroy();
+      chartState.serviceFlowChart = null;
   }
 
   chartWrapper.innerHTML = '';
@@ -1237,7 +1082,7 @@ function openServiceDetailsModal(serviceCode, serviceName) {
       var gFot = createChartGradient(ctx, "#f97316", "#fb923c");   
       var gProf = sumProfit >= 0 ? createChartGradient(ctx, "#0abab5", "#2dd4bf") : createChartGradient(ctx, "#ef4444", "#f87171");        
 
-      serviceFlowChart = new Chart(ctx, {
+      chartState.serviceFlowChart = new Chart(ctx, {
         type: "bar",
         data: {
           labels: ["Экономика услуги"], 
@@ -1271,7 +1116,7 @@ function openServiceDetailsModal(serviceCode, serviceName) {
           }
         }
       });
-      serviceFlowChart.$revenue = totalRevenue; 
+      chartState.serviceFlowChart.$revenue = totalRevenue; 
   } catch (err) {
       console.error("График не смог нарисоваться:", err);
   }
@@ -1328,64 +1173,61 @@ function initializePeriodControls() {
   var periodBArea = document.getElementById("period-b-body");
 
   if (periodAModeSelect) {
-    periodAModeSelect.addEventListener("change", function () {
-      var mode = periodAModeSelect.value;
-      appState.periodA.mode = mode;
-      updatePeriodAVisibility();
-      renderActiveDashboard();
-    });
+      periodAModeSelect.addEventListener("change", function () {
+        var mode = periodAModeSelect.value;
+        updatePeriod("periodA", { mode: mode });
+        updatePeriodAVisibility();
+        renderActiveDashboard();
+      });
   }
 
   if (periodAMonthFromSelect) {
-    periodAMonthFromSelect.value = String(
-      appState.periodA.monthFrom
-    );
-    periodAMonthFromSelect.addEventListener("change", function () {
-      var value = parseInt(periodAMonthFromSelect.value, 10);
-      appState.periodA.monthFrom = value;
-      if (appState.periodA.mode === "month") {
-        appState.periodA.monthTo = value;
-        if (periodAMonthToSelect) {
-          periodAMonthToSelect.value = String(value);
+      periodAMonthFromSelect.value = String(
+        appState.periodA.monthFrom
+      );
+      periodAMonthFromSelect.addEventListener("change", function () {
+        var value = parseInt(periodAMonthFromSelect.value, 10);
+        updatePeriod("periodA", { monthFrom: value });
+        if (appState.periodA.mode === "month" && periodAMonthToSelect) {
+          periodAMonthToSelect.value = String(appState.periodA.monthTo);
         }
-      }
-      renderActiveDashboard();
-    });
-  }
-
-  if (periodAMonthToSelect) {
-    periodAMonthToSelect.value = String(appState.periodA.monthTo);
-    periodAMonthToSelect.addEventListener("change", function () {
-      var value = parseInt(periodAMonthToSelect.value, 10);
-      appState.periodA.monthTo = value;
-      renderActiveDashboard();
-    });
-  }
-
-  var periodAYearSelect = document.getElementById("period-a-year");
-  if (periodAYearSelect) {
-    periodAYearSelect.addEventListener("change", function () {
-      var value = parseInt(periodAYearSelect.value, 10);
-      appState.periodA.year = value;
-      renderActiveDashboard();
-    });
-  }
-
-  if (compareToggle && periodBArea) {
-    compareToggle.checked = appState.periodB.enabled;
-    periodBArea.setAttribute(
-      "aria-hidden",
-      appState.periodB.enabled ? "false" : "true"
-    );
-    if (!appState.periodB.enabled) {
-      periodBArea.classList.add("hidden");
+        renderActiveDashboard();
+      });
     }
 
-    compareToggle.addEventListener("change", function () {
-      appState.periodB.enabled = compareToggle.checked;
-      if (appState.periodB.enabled) {
-        periodBArea.classList.remove("hidden");
-        periodBArea.setAttribute("aria-hidden", "false");
+    if (periodAMonthToSelect) {
+      periodAMonthToSelect.value = String(appState.periodA.monthTo);
+      periodAMonthToSelect.addEventListener("change", function () {
+        var value = parseInt(periodAMonthToSelect.value, 10);
+        updatePeriod("periodA", { monthTo: value });
+        renderActiveDashboard();
+      });
+    }
+
+    var periodAYearSelect = document.getElementById("period-a-year");
+    if (periodAYearSelect) {
+      periodAYearSelect.addEventListener("change", function () {
+        var value = parseInt(periodAYearSelect.value, 10);
+        updatePeriod("periodA", { year: value });
+        renderActiveDashboard();
+      });
+    }
+
+    if (compareToggle && periodBArea) {
+      compareToggle.checked = appState.periodB.enabled;
+      periodBArea.setAttribute(
+      "aria-hidden",
+      appState.periodB.enabled ? "false" : "true"
+      );
+      if (!appState.periodB.enabled) {
+        periodBArea.classList.add("hidden");
+      }
+
+      compareToggle.addEventListener("change", function () {
+        togglePeriodB(compareToggle.checked);
+        if (appState.periodB.enabled) {
+          periodBArea.classList.remove("hidden");
+          periodBArea.setAttribute("aria-hidden", "false");
       } else {
         periodBArea.classList.add("hidden");
         periodBArea.setAttribute("aria-hidden", "true");
@@ -1394,13 +1236,13 @@ function initializePeriodControls() {
     });
   }
 
-  if (periodBModeSelect && periodBCustomBlock) {
-    periodBModeSelect.addEventListener("change", function () {
-      var mode = periodBModeSelect.value;
-      appState.periodB.mode = mode;
-      if (mode === "custom") {
-        periodBCustomBlock.classList.remove("hidden");
-      } else {
+    if (periodBModeSelect && periodBCustomBlock) {
+      periodBModeSelect.addEventListener("change", function () {
+        var mode = periodBModeSelect.value;
+        updatePeriod("periodB", { mode: mode });
+        if (mode === "custom") {
+          periodBCustomBlock.classList.remove("hidden");
+        } else {
         periodBCustomBlock.classList.add("hidden");
       }
       renderActiveDashboard();
@@ -1415,29 +1257,29 @@ function initializePeriodControls() {
     "period-b-month-to"
   );
 
-  if (periodBYearSelect) {
-    periodBYearSelect.addEventListener("change", function () {
-      var value = parseInt(periodBYearSelect.value, 10);
-      appState.periodB.year = value;
-      renderActiveDashboard();
-    });
-  }
+    if (periodBYearSelect) {
+      periodBYearSelect.addEventListener("change", function () {
+        var value = parseInt(periodBYearSelect.value, 10);
+        updatePeriod("periodB", { year: value });
+        renderActiveDashboard();
+      });
+    }
 
-  if (periodBMonthFromSelect) {
-    periodBMonthFromSelect.addEventListener("change", function () {
-      var value = parseInt(periodBMonthFromSelect.value, 10);
-      appState.periodB.monthFrom = value;
-      renderActiveDashboard();
-    });
-  }
+    if (periodBMonthFromSelect) {
+      periodBMonthFromSelect.addEventListener("change", function () {
+        var value = parseInt(periodBMonthFromSelect.value, 10);
+        updatePeriod("periodB", { monthFrom: value });
+        renderActiveDashboard();
+      });
+    }
 
-  if (periodBMonthToSelect) {
-    periodBMonthToSelect.addEventListener("change", function () {
-      var value = parseInt(periodBMonthToSelect.value, 10);
-      appState.periodB.monthTo = value;
-      renderActiveDashboard();
-    });
-  }
+    if (periodBMonthToSelect) {
+      periodBMonthToSelect.addEventListener("change", function () {
+        var value = parseInt(periodBMonthToSelect.value, 10);
+        updatePeriod("periodB", { monthTo: value });
+        renderActiveDashboard();
+      });
+    }
 
   updatePeriodAVisibility();
 }
@@ -1477,18 +1319,18 @@ function initializeTabs() {
   var tabButtons = document.querySelectorAll(".tabs__button");
 
   tabButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      var tabName = button.getAttribute("data-tab");
-      if (!tabName || tabName === appState.view.activeDashboard) {
-        return;
-      }
+      button.addEventListener("click", function () {
+        var tabName = button.getAttribute("data-tab");
+        if (!tabName || tabName === appState.view.activeDashboard) {
+          return;
+        }
 
-      appState.view.activeDashboard = tabName;
-      updateActiveTabButton();
-      updateActiveDashboard();
-      renderActiveDashboard();
+        setActiveDashboard(tabName);
+        updateActiveTabButton();
+        updateActiveDashboard();
+        renderActiveDashboard();
+      });
     });
-  });
 
   updateActiveTabButton();
   updateActiveDashboard();
@@ -1590,17 +1432,17 @@ function initializeDoctorSearch() {
   var resetButton = document.getElementById("doctors-show-all");
 
   if (input) {
-    input.value = doctorSearchQuery || "";
+    input.value = dataState.doctorSearchQuery || "";
 
     input.addEventListener("input", function () {
-      doctorSearchQuery = input.value.trim();
+      dataState.doctorSearchQuery = input.value.trim();
       renderDoctorsDashboard();
     });
   }
 
   if (resetButton) {
     resetButton.addEventListener("click", function () {
-      doctorSearchQuery = "";
+      dataState.doctorSearchQuery = "";
       if (input) {
         input.value = "";
       }
@@ -1618,35 +1460,35 @@ function initializeServicesControls() {
   var prevBtn = document.getElementById("services-page-prev");
   var nextBtn = document.getElementById("services-page-next");
 
-  if (searchInput) {
-    searchInput.addEventListener("input", function() {
-      appState.services.page = 1;
-      renderServicesDashboard();
-    });
-  }
-
-  if (filterSelect) {
-    filterSelect.addEventListener("change", function() {
-      appState.services.page = 1;
-      renderServicesDashboard();
-    });
-  }
-
-  if (prevBtn) {
-    prevBtn.addEventListener("click", function() {
-      if (appState.services.page > 1) {
-        appState.services.page--;
+    if (searchInput) {
+      searchInput.addEventListener("input", function() {
+        setServicesPage(1);
         renderServicesDashboard();
-      }
-    });
-  }
+      });
+    }
 
-  if (nextBtn) {
-    nextBtn.addEventListener("click", function() {
-      appState.services.page++;
-      renderServicesDashboard();
-    });
-  }
+    if (filterSelect) {
+      filterSelect.addEventListener("change", function() {
+        setServicesPage(1);
+        renderServicesDashboard();
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", function() {
+        if (appState.services.page > 1) {
+          setServicesPage(appState.services.page - 1);
+          renderServicesDashboard();
+        }
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", function() {
+        setServicesPage(appState.services.page + 1);
+        renderServicesDashboard();
+      });
+    }
 }
 
 function initializePatientsServicesControls() {
@@ -1669,16 +1511,9 @@ function initializePatientsServicesControls() {
     return;
   }
 
-  if (!appState.patientsServices) {
-    appState.patientsServices = {
-      mode: "top",
-      page: 1
-    };
-  }
-
-  function rerenderIfActive() {
-    if (appState.view.activeDashboard === "patients") {
-      renderPatientsDashboard();
+    function rerenderIfActive() {
+      if (appState.view.activeDashboard === "patients") {
+        renderPatientsDashboard();
     }
   }
 
@@ -1690,39 +1525,39 @@ function initializePatientsServicesControls() {
     limitSelect.addEventListener("change", rerenderIfActive);
   }
 
-  if (searchInput) {
-    searchInput.addEventListener("input", function () {
-      appState.patientsServices.page = 1;
-      rerenderIfActive();
-    });
-  }
-
-  if (modeSelect) {
-    modeSelect.addEventListener("change", function () {
-      var mode = modeSelect.value || "top";
-      appState.patientsServices.mode = mode;
-      appState.patientsServices.page = 1;
-      rerenderIfActive();
-    });
-  }
-
-  if (prevBtn) {
-    prevBtn.addEventListener("click", function () {
-      if (appState.patientsServices.page > 1) {
-        appState.patientsServices.page -= 1;
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        setPatientsServicesPage(1);
         rerenderIfActive();
-      }
-    });
-  }
+      });
+    }
 
-  if (nextBtn) {
-    nextBtn.addEventListener("click", function () {
-      // предел страниц мы посчитаем внутри renderPatientsDashboard
-      appState.patientsServices.page += 1;
-      rerenderIfActive();
-    });
+    if (modeSelect) {
+      modeSelect.addEventListener("change", function () {
+        var mode = modeSelect.value || "top";
+        setPatientsServicesMode(mode);
+        setPatientsServicesPage(1);
+        rerenderIfActive();
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", function () {
+        if (appState.patientsServices.page > 1) {
+          setPatientsServicesPage(appState.patientsServices.page - 1);
+          rerenderIfActive();
+        }
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", function () {
+        // предел страниц мы посчитаем внутри renderPatientsDashboard
+        setPatientsServicesPage(appState.patientsServices.page + 1);
+        rerenderIfActive();
+      });
+    }
   }
-}
 
 function initializePatientsFlowControls() {
   var modeSelect = document.getElementById("patients-flow-mode-select");
@@ -1731,14 +1566,8 @@ function initializePatientsFlowControls() {
     return;
   }
 
-  if (!appState.patientsFlow) {
-    appState.patientsFlow = {
-      mode: "departments"
-    };
-  }
-
-  // Установим текущее значение из состояния
-  modeSelect.value = appState.patientsFlow.mode || "departments";
+    // Установим текущее значение из состояния
+    modeSelect.value = appState.patientsFlow.mode || "departments";
 
   function rerenderIfActive() {
     if (appState.view.activeDashboard === "patients") {
@@ -1746,12 +1575,12 @@ function initializePatientsFlowControls() {
     }
   }
 
-  modeSelect.addEventListener("change", function () {
-    var mode = modeSelect.value || "departments";
-    appState.patientsFlow.mode = mode;
-    rerenderIfActive();
-  });
-}
+    modeSelect.addEventListener("change", function () {
+      var mode = modeSelect.value || "departments";
+      setPatientsFlowMode(mode);
+      rerenderIfActive();
+    });
+  }
 
 /**
  * Инициализация контролов раздела "Себестоимость".
@@ -1772,47 +1601,47 @@ function initializeCostsControls() {
   const btnNext = document.getElementById("costs-page-next");
 
   // Поиск
-  if (searchInput) {
-    const newSearch = searchInput.cloneNode(true);
-    searchInput.parentNode.replaceChild(newSearch, searchInput);
-    newSearch.addEventListener("input", function(e) {
-      costsTableState.search = e.target.value.trim().toLowerCase();
-      costsTableState.page = 1;
-      renderCostsDashboard(); // Перерисовка
-    });
-  }
+    if (searchInput) {
+      const newSearch = searchInput.cloneNode(true);
+      searchInput.parentNode.replaceChild(newSearch, searchInput);
+      newSearch.addEventListener("input", function(e) {
+        costsTableState.search = e.target.value.trim().toLowerCase();
+        setCostsTablePage(1);
+        renderCostsDashboard(); // Перерисовка
+      });
+    }
 
   // Фильтр
-  if (filterSelect) {
-    filterSelect.addEventListener("change", function(e) {
-      costsTableState.filter = e.target.value;
-      costsTableState.page = 1;
-      renderCostsDashboard();
-    });
-  }
+    if (filterSelect) {
+      filterSelect.addEventListener("change", function(e) {
+        costsTableState.filter = e.target.value;
+        setCostsTablePage(1);
+        renderCostsDashboard();
+      });
+    }
 
   // Пагинация: Назад
-  if (btnPrev) {
-    const newPrev = btnPrev.cloneNode(true);
-    btnPrev.parentNode.replaceChild(newPrev, btnPrev);
-    newPrev.addEventListener("click", function() {
-      if (costsTableState.page > 1) {
-        costsTableState.page--;
-        renderCostsDashboard();
-      }
-    });
-  }
+    if (btnPrev) {
+      const newPrev = btnPrev.cloneNode(true);
+      btnPrev.parentNode.replaceChild(newPrev, btnPrev);
+      newPrev.addEventListener("click", function() {
+        if (costsTableState.page > 1) {
+          setCostsTablePage(costsTableState.page - 1);
+          renderCostsDashboard();
+        }
+      });
+    }
 
   // Пагинация: Вперед
-  if (btnNext) {
-    const newNext = btnNext.cloneNode(true);
-    btnNext.parentNode.replaceChild(newNext, btnNext);
-    newNext.addEventListener("click", function() {
-      // Макс. страницы проверим внутри рендера, тут просто инкремент
-      costsTableState.page++; 
-      renderCostsDashboard();
-    });
-  }
+    if (btnNext) {
+      const newNext = btnNext.cloneNode(true);
+      btnNext.parentNode.replaceChild(newNext, btnNext);
+      newNext.addEventListener("click", function() {
+        // Макс. страницы проверим внутри рендера, тут просто инкремент
+        setCostsTablePage(costsTableState.page + 1);
+        renderCostsDashboard();
+      });
+    }
   
   // Сортировка по заголовкам (Делегирование)
   const table = document.querySelector("#cost-optimization-tbody")?.closest("table");
@@ -1876,7 +1705,7 @@ function populateFilterOptions() {
   var departmentsSet = {};
   var doctorsSet = {};
 
-  preparedDataRows.forEach(function (row) {
+  dataState.preparedDataRows.forEach(function (row) {
     if (row.department) {
       departmentsSet[row.department] = true;
     }
@@ -2422,9 +2251,9 @@ function renderOverviewDashboard() {
   var elSvcPerPat = document.getElementById("kpi-services-per-patient");
 
   // Обработка пустого состояния
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
 
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRowsA = filterRowsByPeriod(filteredRows, appState.periodA);
   
   if (!periodRowsA || periodRowsA.length === 0) {
@@ -2865,8 +2694,8 @@ function renderDepartmentsDashboard() {
   var fontSpec = "Inter, system-ui, sans-serif";
   
   // 1. Данные
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   
   // Элементы KPI
@@ -3038,7 +2867,7 @@ function renderDepartmentsDashboard() {
   if (typeof renderRevenueSankey === 'function') renderRevenueSankey(periodRows);
   if (typeof renderDepartmentsPortfolioScatter === 'function') renderDepartmentsPortfolioScatter(summary);
 
-  var targetDept = lastDepartmentForChart || (departmentsArray[0] ? departmentsArray[0].name : null);
+  var targetDept = chartState.lastDepartmentForChart || (departmentsArray[0] ? departmentsArray[0].name : null);
   if (targetDept) renderDepartmentFlowChart(byDepartment, targetDept);
   
   var btnExpand = document.getElementById("btn-expand-scatter");
@@ -3055,11 +2884,11 @@ function initializeDepartmentsInteractions() {
     return;
   }
 
-  plBody.addEventListener("click", function (event) {
-    var row = event.target.closest("tr[data-department-name]");
-    if (!row) {
-      return;
-    }
+    plBody.addEventListener("click", function (event) {
+      var row = event.target.closest("tr[data-department-name]");
+      if (!row) {
+        return;
+      }
     var name = row.getAttribute("data-department-name");
     if (!name) {
       return;
@@ -3073,13 +2902,13 @@ function initializeDepartmentsInteractions() {
       departmentSelect.value = name;
     }
 
-    // Переключаемся на вкладку "Врачи"
-    appState.view.activeDashboard = "doctors";
-    updateActiveTabButton();
-    updateActiveDashboard();
-    renderActiveDashboard();
-  });
-}
+      // Переключаемся на вкладку "Врачи"
+      setActiveDashboard("doctors");
+      updateActiveTabButton();
+      updateActiveDashboard();
+      renderActiveDashboard();
+    });
+  }
 
 /**
  * Инициализация взаимодействий на вкладке Врачи.
@@ -3095,29 +2924,29 @@ function initializeDoctorsInteractions() {
   var nextBtn = document.getElementById("doctors-page-next");
 
   // 1. Поиск по врачам (Input)
-  if (searchInput) {
-    // Восстанавливаем состояние из appState, если есть
-    searchInput.value = appState.view.doctorSearch || "";
-    
-    searchInput.addEventListener("input", function () {
-      appState.view.doctorSearch = searchInput.value || "";
-      appState.view.doctorsPage = 1; // Сброс на 1 страницу при поиске
-      renderDoctorsDashboard();
-    });
-  }
+    if (searchInput) {
+      // Восстанавливаем состояние из appState, если есть
+      searchInput.value = appState.view.doctorSearch || "";
+
+      searchInput.addEventListener("input", function () {
+        setDoctorSearch(searchInput.value || "");
+        setDoctorsPage(1); // Сброс на 1 страницу при поиске
+        renderDoctorsDashboard();
+      });
+    }
 
   // 2. [FIX] Фильтр по категориям (Звезды, Риск и т.д.)
-  if (categorySelect) {
-    // Удаляем старые слушатели (через клонирование), чтобы не дублировать
-    var newSelect = categorySelect.cloneNode(true);
-    categorySelect.parentNode.replaceChild(newSelect, categorySelect);
-    categorySelect = newSelect;
+    if (categorySelect) {
+      // Удаляем старые слушатели (через клонирование), чтобы не дублировать
+      var newSelect = categorySelect.cloneNode(true);
+      categorySelect.parentNode.replaceChild(newSelect, categorySelect);
+      categorySelect = newSelect;
 
-    categorySelect.addEventListener("change", function () {
-      appState.view.doctorsPage = 1; // Сброс на 1 страницу при фильтрации
-      renderDoctorsDashboard();      // Перерисовка таблицы
-    });
-  }
+      categorySelect.addEventListener("change", function () {
+        setDoctorsPage(1); // Сброс на 1 страницу при фильтрации
+        renderDoctorsDashboard();      // Перерисовка таблицы
+      });
+    }
 
   // 3. Клик по строке врача (Делегирование)
   if (plBody) {
@@ -3140,31 +2969,31 @@ function initializeDoctorsInteractions() {
   }
 
   // 4. Пагинация: Назад
-  if (prevBtn) {
-    var newPrev = prevBtn.cloneNode(true);
-    prevBtn.parentNode.replaceChild(newPrev, prevBtn);
-    newPrev.addEventListener("click", function () {
-      if (appState.view.doctorsPage > 1) {
-        appState.view.doctorsPage -= 1;
-        renderDoctorsDashboard();
-      }
-    });
-  }
+    if (prevBtn) {
+      var newPrev = prevBtn.cloneNode(true);
+      prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+      newPrev.addEventListener("click", function () {
+        if (appState.view.doctorsPage > 1) {
+          setDoctorsPage(appState.view.doctorsPage - 1);
+          renderDoctorsDashboard();
+        }
+      });
+    }
 
   // 5. Пагинация: Вперед
   if (nextBtn) {
-    var newNext = nextBtn.cloneNode(true);
-    nextBtn.parentNode.replaceChild(newNext, nextBtn);
-    newNext.addEventListener("click", function () {
-      // Чтобы узнать макс кол-во страниц, нужно знать кол-во отфильтрованных врачей.
-      // В рамках упрощения просто вызываем рендер, а внутри renderDoctorsDashboard
-      // есть проверка: if (page > totalPages) page = totalPages
-      // Поэтому просто инкрементим:
-      appState.view.doctorsPage += 1;
-      renderDoctorsDashboard();
-    });
+      var newNext = nextBtn.cloneNode(true);
+      nextBtn.parentNode.replaceChild(newNext, nextBtn);
+      newNext.addEventListener("click", function () {
+        // Чтобы узнать макс кол-во страниц, нужно знать кол-во отфильтрованных врачей.
+        // В рамках упрощения просто вызываем рендер, а внутри renderDoctorsDashboard
+        // есть проверка: if (page > totalPages) page = totalPages
+        // Поэтому просто инкрементим:
+        setDoctorsPage(appState.view.doctorsPage + 1);
+        renderDoctorsDashboard();
+      });
+    }
   }
-}
 
 
 
@@ -3223,12 +3052,12 @@ function renderDoctorsDashboard() {
   tbody.innerHTML = "";
 
   // 1. Данные
-  if (!preparedDataRows || preparedDataRows.length === 0) {
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="muted" style="text-align:center; padding:20px;">Нет данных</td></tr>';
     return;
   }
   
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   var metrics = calculateMetrics(periodRows);
   var byDoctor = metrics.byDoctor || {};
@@ -3324,7 +3153,7 @@ function renderDoctorsDashboard() {
   var totalPages = Math.ceil(totalItems / pageSize) || 1;
   if (page > totalPages) page = totalPages;
   if (page < 1) page = 1;
-  appState.view.doctorsPage = page;
+  page = setDoctorsPage(page);
   
   var visibleDocs = docList.slice((page - 1) * pageSize, page * pageSize);
 
@@ -3408,9 +3237,9 @@ function renderPatientsFlowChart(rows) {
   container.innerHTML = "";
 
   // Если есть старый график — уничтожаем
-  if (patientsFlowChart) {
-    patientsFlowChart.destroy();
-    patientsFlowChart = null;
+  if (chartState.patientsFlowChart) {
+    chartState.patientsFlowChart.destroy();
+    chartState.patientsFlowChart = null;
   }
 
   if (!rows || rows.length === 0) {
@@ -3523,7 +3352,7 @@ function renderPatientsFlowChart(rows) {
     ? createChartGradient(ctx, "#050124", "#190119ff")
     : "#040798ff";
 
-  patientsFlowChart = new Chart(ctx, {
+  chartState.patientsFlowChart = new Chart(ctx, {
     type: "line",
     data: {
       labels: monthLabels,
@@ -3631,9 +3460,9 @@ function renderPatientsTopServicesChart(servicesArray) {
 
   container.innerHTML = "";
 
-  if (patientsTopServicesChart) {
-    patientsTopServicesChart.destroy();
-    patientsTopServicesChart = null;
+  if (chartState.patientsTopServicesChart) {
+    chartState.patientsTopServicesChart.destroy();
+    chartState.patientsTopServicesChart = null;
   }
 
   if (!servicesArray || servicesArray.length === 0) {
@@ -3668,7 +3497,7 @@ function renderPatientsTopServicesChart(servicesArray) {
     ? createChartGradient(ctx, "#6366f1", "#4f46e5")
     : "#6366f1";
 
-  patientsTopServicesChart = new Chart(ctx, {
+  chartState.patientsTopServicesChart = new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
@@ -3748,9 +3577,9 @@ function renderPatientsFlowSankey(departmentsArray, servicesArray, metrics) {
 
   container.innerHTML = "";
 
-  if (patientsFlowDiagram) {
-    patientsFlowDiagram.destroy();
-    patientsFlowDiagram = null;
+  if (chartState.patientsFlowDiagram) {
+    chartState.patientsFlowDiagram.destroy();
+    chartState.patientsFlowDiagram = null;
   }
 
   // --- Логика подготовки данных (как была) ---
@@ -3835,7 +3664,7 @@ function renderPatientsFlowSankey(departmentsArray, servicesArray, metrics) {
   // --- ОТРИСОВКА (Стилизованная под Inter) ---
   var fontFamily = "Inter, sans-serif";
 
-  patientsFlowDiagram = Highcharts.chart(container, {
+  chartState.patientsFlowDiagram = Highcharts.chart(container, {
     chart: {
       type: "sankey",
       inverted: false,
@@ -3930,8 +3759,8 @@ function renderClinicDashboard() {
   console.log("renderClinicDashboard: Starting Sync Check...");
 
   // 1. Подготовка
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   
   var elRev    = document.getElementById("clinic-kpi-revenue");
@@ -4333,9 +4162,9 @@ function renderServicesDashboard() {
   var nextBtn = document.getElementById("services-page-next");
 
   // 1. ПОДГОТОВКА ДАННЫХ
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
 
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   
   // Пустое состояние
@@ -4656,9 +4485,9 @@ function renderPatientsDashboard() {
   if (tbodyDepartments) tbodyDepartments.innerHTML = "";
 
   // 1. Data Prep
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
 
-  var filteredRows = applyFilters(preparedDataRows, appState.filters); // Применяем фильтры (врач, отделение...)
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters); // Применяем фильтры (врач, отделение...)
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA); // Применяем период
   
   if (!periodRows || periodRows.length === 0) {
@@ -4821,7 +4650,7 @@ function renderDepartmentFlowChart(byDepartment, preferredName) {
   var selectedName = preferredName;
   if (!selectedName || !byDepartment[selectedName]) selectedName = select.value || names[0];
   select.value = selectedName;
-  lastDepartmentForChart = selectedName;
+  chartState.lastDepartmentForChart = selectedName;
 
   var d = byDepartment[selectedName];
   
@@ -4905,7 +4734,7 @@ function renderDoctorFlowChart(byDoctor, selectedName) {
   if (!canvas || !subtitleEl) return;
 
   var ctx = canvas.getContext("2d");
-  if (doctorFlowChart) { doctorFlowChart.destroy(); doctorFlowChart = null; }
+  if (chartState.doctorFlowChart) { chartState.doctorFlowChart.destroy(); chartState.doctorFlowChart = null; }
 
   var names = Object.keys(byDoctor || {});
   if (names.length === 0 || !selectedName || !byDoctor[selectedName]) {
@@ -4938,8 +4767,8 @@ function renderDoctorFlowChart(byDoctor, selectedName) {
 
   // Текст с отделениями
   var departmentsText = "";
-  if (Array.isArray(preparedDataRows)) {
-    var doctorRows = filterRowsByPeriod(applyFilters(preparedDataRows, appState.filters), appState.periodA)
+  if (Array.isArray(dataState.preparedDataRows)) {
+    var doctorRows = filterRowsByPeriod(applyFilters(dataState.preparedDataRows, appState.filters), appState.periodA)
                      .filter(r => r.doctor === selectedName);
     if (doctorRows.length > 0) {
       var byDept = {};
@@ -4965,7 +4794,7 @@ function renderDoctorFlowChart(byDoctor, selectedName) {
   var tiffanyGradient = createChartGradient(ctx, "#06b6d4", "#22d3ee");
   var redGradient = createChartGradient(ctx, "#dc2626", "#ef4444");
 
-  doctorFlowChart = new Chart(ctx, {
+  chartState.doctorFlowChart = new Chart(ctx, {
     type: "doughnut",
     data: {
       labels: [
@@ -5227,13 +5056,13 @@ function renderCostsDashboard() {
   const colorText = "#64748b";
   const colorGrid = "#e2e8f0";
 
-  if (!preparedDataRows || preparedDataRows.length === 0) {
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) {
     if(tbody) tbody.innerHTML = '<tr><td colspan="6" class="muted">Нет данных для анализа</td></tr>';
     return;
   }
 
   // --- 1. БЕНЧМАРКИ ---
-  const globalPeriodRows = filterRowsByPeriod(preparedDataRows, appState.periodA);
+  const globalPeriodRows = filterRowsByPeriod(dataState.preparedDataRows, appState.periodA);
   let globalRev = 0, globalMat = 0, globalOpEx = 0;
 
   globalPeriodRows.forEach(r => {
@@ -5245,7 +5074,7 @@ function renderCostsDashboard() {
   const benchmarkGross = globalRev > 0 ? ((globalRev - globalOpEx) / globalRev * 100) : 0;
 
   // --- 2. ТЕКУЩАЯ ВЫБОРКА ---
-  const filteredRows = applyFilters(preparedDataRows, appState.filters);
+  const filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   const currentRows = filterRowsByPeriod(filteredRows, appState.periodA);
 
   if (currentRows.length === 0) {
@@ -5585,8 +5414,8 @@ function renderMotivationDashboard() {
   var fontSpec = "Inter, system-ui, sans-serif";
 
   // 1. Проверка данных
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   
   if (!periodRows || periodRows.length === 0) {
@@ -5846,8 +5675,8 @@ function renderMotivationDoctorsDashboard() {
   var fontSpec = "Inter, system-ui, sans-serif";
 
   // 1. Данные
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   
   if (!periodRows || periodRows.length === 0) {
@@ -6256,7 +6085,7 @@ function renderOverviewChart(rowsA, yearA, rowsB, yearB) {
 
   var ctx = canvas.getContext("2d");
   // Очистка
-  if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
+  if (chartState.overviewChart) { chartState.overviewChart.destroy(); chartState.overviewChart = null; }
   if ((!rowsA || rowsA.length === 0) && (!rowsB || rowsB.length === 0)) return;
 
   var labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
@@ -6283,7 +6112,7 @@ function renderOverviewChart(rowsA, yearA, rowsB, yearB) {
   var gradRev = createChartGradient(ctx, "#3b82f6", "#60a5fa"); // Blue
   var gradNet = createChartGradient(ctx, "#0abab5", "#2dd4bf"); // Tiffany
 
-  overviewChart = new Chart(ctx, {
+  chartState.overviewChart = new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
@@ -7133,7 +6962,7 @@ function openDoctorDetailsModal(doctorName) {
   var fontSpec = "Inter, system-ui, sans-serif";
 
   // 1. Фильтрация (Безопасное сравнение)
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   
   // FIX: Убираем пробелы, чтобы сравнение было точным
@@ -7853,13 +7682,13 @@ function renderProgramsDashboard() {
   tbody.innerHTML = "";
   if(kpiCashRatio) kpiCashRatio.textContent = "0%";
   
-  if (!preparedDataRows || preparedDataRows.length === 0) {
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) {
     renderEmptyState(tbody.closest(".placeholder-table"), { title: "Нет данных" });
     return;
   }
 
   // Фильтры и Период
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   
   if (!periodRows || periodRows.length === 0) {
@@ -8144,7 +7973,7 @@ function isEmpty(val) {
  * ГЛАВНАЯ ФУНКЦИЯ ЭКСПЕРТИЗЫ
  */
 function runMUE_SRS_Audit() {
-  if (!preparedDataRows || preparedDataRows.length === 0) {
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) {
     alert("❌ Данные не загружены.");
     return;
   }
@@ -8162,13 +7991,13 @@ function runMUE_SRS_Audit() {
   
   // Счетчики глобальных проблем
   var counters = {
-    total: preparedDataRows.length,
+    total: dataState.preparedDataRows.length,
     hiddenByPeriod: 0,
     criticalErrors: 0,
     logicErrors: 0
   };
 
-  preparedDataRows.forEach(function(row, index) {
+  dataState.preparedDataRows.forEach(function(row, index) {
     var issues = [];
     var status = "OK";
     
@@ -8682,8 +8511,8 @@ function renderPaymentsDashboard() {
   var fontSpec = "Inter, system-ui, sans-serif";
 
   // 1. Проверка данных
-  if (!preparedDataRows || preparedDataRows.length === 0) return;
-  var filteredRows = applyFilters(preparedDataRows, appState.filters);
+  if (!dataState.preparedDataRows || dataState.preparedDataRows.length === 0) return;
+  var filteredRows = applyFilters(dataState.preparedDataRows, appState.filters);
   var periodRows = filterRowsByPeriod(filteredRows, appState.periodA);
   
   if (!periodRows || periodRows.length === 0) {
